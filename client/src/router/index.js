@@ -2,12 +2,60 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Entry from '../views/Entry.vue'
 import UserAgreement from '../views/UserAgreement.vue'
 import PersonalDataPolicy from '../views/PersonalDataPolicy.vue'
+import Tasks from '../views/Tasks.vue'
+import Search from '../views/Search.vue'
+import Profile from '../views/Profile.vue'
+import Notes from '../views/Notes.vue'
+import Contacts from '../views/Contacts.vue'
+import Companies from '../views/Companies.vue'
+import Analytics from '../views/Analytics.vue'
+import Settings from '../views/Settings.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Entry',
     component: Entry,
+  },
+  {
+    path: '/tasks',
+    name: 'Tasks',
+    component: Tasks,
+  },
+  {
+    path: '/search',
+    name: 'Search',
+    component: Search,
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: Profile,
+  },
+  {
+    path: '/notes',
+    name: 'Notes',
+    component: Notes,
+  },
+  {
+    path: '/contacts',
+    name: 'Contacts',
+    component: Contacts,
+  },
+  {
+    path: '/companies',
+    name: 'Companies',
+    component: Companies,
+  },
+  {
+    path: '/analytics',
+    name: 'Analytics',
+    component: Analytics,
+  },
+  {
+    path: '/settings',
+    name: 'Settings',
+    component: Settings,
   },
   {
     path: '/user-agreement',

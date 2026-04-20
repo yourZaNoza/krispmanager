@@ -57,7 +57,9 @@
 </template>
 
 <script setup>
-// Логика страницы
+import { ref } from 'vue'
+import Sidebar from '@/components/Sidebar.vue'
+const sidebarOpen = ref(true)
 </script>
 
 <style scoped>

@@ -187,51 +187,9 @@
                 v-model="loginData.remember"
                 hide-details="auto"
                 color="success"
+                class="mb-2"
                 label="Запомнить меня"
               ></v-checkbox>
-              <v-checkbox
-                v-model="loginData.privacyPolicy"
-                :rules="[(v) => !!v || 'Необходимо согласие']"
-                color="success"
-                class="mb-3"
-                hide-details="auto"
-              >
-                <template v-slot:label>
-                  <span>
-                    Я ознакомлен с
-                    <a
-                      href="/user-agreement"
-                      target="_blank"
-                      class="text-success text-decoration-underline"
-                      @click.prevent="openUserAgreement"
-                    >
-                      пользовательским соглашением
-                    </a>
-                  </span>
-                </template>
-              </v-checkbox>
-
-              <v-checkbox
-                v-model="loginData.personalData"
-                :rules="[(v) => !!v || 'Необходимо согласие']"
-                color="success"
-                class="mb-6"
-                hide-details="auto"
-              >
-                <template v-slot:label>
-                  <span>
-                    Я ознакомлен с
-                    <a
-                      href="/personal-data-policy"
-                      target="_blank"
-                      class="text-success text-decoration-underline"
-                      @click.prevent="openPersonalDataPolicy"
-                    >
-                      политикой персональных данных
-                    </a>
-                  </span>
-                </template>
-              </v-checkbox>
             </v-form>
           </v-card-text>
 
@@ -296,8 +254,6 @@ const loginData = reactive({
   email: '',
   password: '',
   remember: false,
-  privacyPolicy: false,
-  personalData: false,
 })
 
 const nameRules = [
@@ -378,12 +334,10 @@ const login = async () => {
         },
       )
 
-      console.log('Успешная авторизация:', response.data)
+      localStorage.setItem('user', JSON.stringify(response.data.user))
 
       closeLogin()
-
-      // Здесь буде перенаправление на главную страницу приложения:
-      // router.push('/dashboard');
+      router.push('/tasks')
     } catch (error) {
       console.error(error)
       alert(error.response?.data?.message || 'Произошла ошибка при входе')

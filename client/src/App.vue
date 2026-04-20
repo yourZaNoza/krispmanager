@@ -11,12 +11,7 @@ import { RouterView } from 'vue-router'
 
 <style>
 body {
-  background-color: rgb(var(--v-theme-background)) !important;
   margin: 0;
   padding: 0;
-}
-
-html {
-  background-color: rgb(var(--v-theme-background)) !important;
 }
 </style>

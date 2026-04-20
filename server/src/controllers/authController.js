@@ -47,13 +47,13 @@ exports.login = async (req, res) => {
     const user = await Employee.findByEmail(email);
 
     if (!user) {
-      return res.status(401).json({ message: "Неверный E-mail или пароль" });
+      return res.status(404).json({ message: "Пользователь с таким email не зарегистрирован" });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
-      return res.status(401).json({ message: "Неверный E-mail или пароль" });
+      return res.status(401).json({ message: "Неверный пароль" });
     }
 
     const expiresIn = remember ? "30d" : "24h";

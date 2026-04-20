@@ -965,7 +965,6 @@
 </template>
 
 <script setup>
-// Логика страницы
 </script>
 
 <style scoped>
