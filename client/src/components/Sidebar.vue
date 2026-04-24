@@ -64,7 +64,7 @@
           <span
             class="nav-icon"
             :style="{ color: isActive('/help') ? '#0C693B' : '#727272' }"
-            v-html="FoldersSvg"
+            v-html="QuestionSvg"
           />
         </template>
       </v-list-item>
@@ -74,7 +74,7 @@
     <template #append>
       <v-divider />
       <div class="pa-3">
-        <v-list-item class="px-0 user-item" style="margin-bottom: 46px" to="/profile">
+        <v-list-item class="px-0 user-item" style="margin-bottom: 12px" to="/profile">
           <template #prepend>
             <v-avatar size="34" color="grey-lighten-2">
               <span class="text-caption font-weight-medium text-grey-darken-2">
@@ -85,6 +85,17 @@
           <v-list-item-title class="text-body-2 font-weight-medium">
             {{ userName || '—' }}
           </v-list-item-title>
+          <template #append>
+            <v-btn
+              icon
+              size="x-small"
+              variant="plain"
+              title="Выйти"
+              @click.prevent="logout"
+            >
+              <v-icon size="18" color="grey-darken-1">mdi-logout</v-icon>
+            </v-btn>
+          </template>
         </v-list-item>
 
         <div class="d-flex flex-column" style="gap: 4px">
@@ -103,7 +114,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 
 import BellRaw from '@/assets/Bell.svg?raw'
 import ClipboardRaw from '@/assets/ClipboardText.svg?raw'
@@ -112,7 +123,7 @@ import AddressRaw from '@/assets/AddressBook.svg?raw'
 import BriefcaseRaw from '@/assets/Briefcase.svg?raw'
 import ChartRaw from '@/assets/ChartLineUp.svg?raw'
 import GearRaw from '@/assets/Gear.svg?raw'
-import FoldersRaw from '@/assets/Folders.svg?raw'
+import QuestionRaw from '@/assets/Question.svg?raw'
 
 defineProps({
   modelValue: { type: Boolean, default: true },
@@ -120,7 +131,13 @@ defineProps({
 defineEmits(['update:modelValue'])
 
 const route = useRoute()
+const router = useRouter()
 const isActive = (path) => route.path === path
+
+const logout = () => {
+  localStorage.removeItem('user')
+  router.push('/')
+}
 
 const userName = ref('')
 const initials = computed(() => {
@@ -151,7 +168,7 @@ const dyn = (raw) => raw.replace(/stroke="#[^"]+"/g, 'stroke="currentColor"')
 
 const ChartSvg = dyn(ChartRaw)
 const GearSvg = dyn(GearRaw)
-const FoldersSvg = dyn(FoldersRaw)
+const QuestionSvg = dyn(QuestionRaw)
 
 const mainNavItems = [
   { path: '/notifications', svg: dyn(BellRaw), label: 'Уведомления' },
@@ -208,7 +225,7 @@ const mainNavItems = [
 }
 
 .footer-link {
-  font-size: 8px;
+  font-size: 12px;
   color: #9e9e9e;
   text-decoration: none;
   line-height: 1.6;

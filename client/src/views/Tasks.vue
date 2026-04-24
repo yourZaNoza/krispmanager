@@ -2,9 +2,8 @@
   <v-app>
     <Sidebar v-model="sidebarOpen" />
 
-    <!-- Верхняя панель с поиском -->
     <v-app-bar flat border="b" height="56" class="toolbar-no-padding">
-      <div class="d-flex align-center" style="padding-left: 6px; gap: 6px; height: 100%;">
+      <div class="d-flex align-center" style="padding-left: 6px; gap: 6px; height: 100%">
         <v-btn
           :icon="sidebarOpen ? 'mdi-chevron-left' : 'mdi-chevron-right'"
           variant="outlined"
@@ -13,20 +12,20 @@
           class="toggle-btn"
           @click="sidebarOpen = !sidebarOpen"
         />
-        <SearchBar style="width: 400px;" />
+        <SearchBar style="width: 400px" />
       </div>
       <v-spacer />
     </v-app-bar>
 
     <v-main>
-      <!-- Заголовок 64px — выравнивается с шапкой Sidebar -->
-      <div class="tasks-header d-flex align-center px-5" style="gap: 16px;">
-        <span style="font-size: 24px; font-weight: 700; white-space: nowrap;">Задачи</span>
+      <div class="tasks-header d-flex align-center px-5" style="gap: 16px">
+        <span style="font-size: 24px; font-weight: 700; white-space: nowrap">Задачи</span>
 
-        <v-tabs v-model="viewTab" density="compact" color="#037247" style="min-width: 0;">
+        <v-tabs v-model="viewTab" density="compact" color="#037247" style="min-width: 0">
           <v-tab value="list">
             <span
-              class="tab-icon" style="margin-right: 8px;"
+              class="tab-icon"
+              style="margin-right: 8px"
               :style="{ color: viewTab === 'list' ? '#037247' : '#727272' }"
               v-html="ListSvg"
             />
@@ -34,7 +33,8 @@
           </v-tab>
           <v-tab value="columns">
             <span
-              class="tab-icon" style="margin-right: 8px;"
+              class="tab-icon"
+              style="margin-right: 8px"
               :style="{ color: viewTab === 'columns' ? '#037247' : '#727272' }"
               v-html="KanbanSvg"
             />
@@ -48,265 +48,254 @@
           <v-icon start size="16">mdi-filter-variant</v-icon>
           Фильтры
         </v-btn>
-
-        <v-btn style="background-color: #037247;" class="text-none text-white" prepend-icon="mdi-plus">
+        <v-btn
+          style="background-color: #037247"
+          class="text-none text-white"
+          prepend-icon="mdi-plus"
+          @click="openCreate"
+        >
           Добавить задачу
         </v-btn>
-
-        <v-btn variant="outlined" color="success" class="text-none" prepend-icon="mdi-plus">
+        <v-btn
+          variant="outlined"
+          color="success"
+          class="text-none"
+          prepend-icon="mdi-plus"
+          @click="catDialog = true"
+        >
           Добавить категорию
         </v-btn>
       </div>
 
       <div class="px-5 pb-5">
-        <!-- Канбан-доска -->
-        <div v-if="viewTab === 'columns'" class="kanban-board" style="margin-top: 32px;">
-          <div
+        <div v-if="viewTab === 'columns'" class="kanban-board" style="margin-top: 32px">
+          <KanbanColumn
             v-for="column in columns"
             :key="column.id"
-            class="kanban-column"
-          >
-            <!-- Заголовок колонки -->
-            <div class="d-flex align-center mb-3" style="gap: 8px;">
-              <v-icon :color="column.dotColor" size="12">mdi-circle</v-icon>
-              <span class="text-subtitle-2 font-weight-bold">{{ column.title }}</span>
-              <span class="text-caption text-grey-darken-1">{{ pluralCount(column.tasks.length) }}</span>
-            </div>
-
-            <!-- Кнопка создать задачу -->
-            <v-btn
-              variant="tonal"
-              color="grey"
-              block
-              class="text-none mb-3 create-task-btn"
-              prepend-icon="mdi-plus"
-            >
-              Создать задачу
-            </v-btn>
-
-            <!-- Карточки задач -->
-            <div class="d-flex flex-column" style="gap: 10px;">
-              <v-card
-                v-for="task in column.tasks"
-                :key="task.id"
-                variant="outlined"
-                rounded="lg"
-                class="task-card pa-3"
-              >
-                <!-- Теги + меню -->
-                <div class="d-flex align-center justify-space-between mb-2">
-                  <div class="d-flex flex-wrap" style="gap: 5px;">
-                    <v-chip
-                      v-for="tag in task.tags"
-                      :key="tag.label"
-                      size="x-small"
-                      rounded="sm"
-                      label
-                      :style="{ backgroundColor: tag.bg, color: tag.color, fontWeight: '500' }"
-                    >
-                      {{ tag.label }}
-                    </v-chip>
-                  </div>
-                  <v-btn icon size="x-small" variant="plain" density="compact">
-                    <v-icon size="16" color="grey">mdi-dots-horizontal</v-icon>
-                  </v-btn>
-                </div>
-
-                <!-- Название задачи -->
-                <p class="text-body-2 font-weight-medium mb-3" style="line-height: 1.4;">
-                  {{ task.title }}
-                </p>
-
-                <!-- Срок + подзадачи -->
-                <div class="d-flex align-center text-caption text-grey-darken-1 mb-1" style="gap: 14px;">
-                  <span class="d-flex align-center" style="gap: 4px;">
-                    <v-icon size="13">mdi-calendar-outline</v-icon>
-                    Срок до {{ task.deadline }}
-                  </span>
-                  <span class="d-flex align-center" style="gap: 4px;">
-                    <v-icon size="13">mdi-format-list-checks</v-icon>
-                    {{ task.subtasks }}
-                  </span>
-                </div>
-
-                <!-- Вложения + комментарии + аватары -->
-                <div class="d-flex align-center text-caption text-grey-darken-1" style="gap: 14px;">
-                  <span class="d-flex align-center" style="gap: 4px;">
-                    <v-icon size="13">mdi-paperclip</v-icon>
-                    {{ task.attachments }}
-                  </span>
-                  <span class="d-flex align-center" style="gap: 4px;">
-                    <v-icon size="13">mdi-comment-outline</v-icon>
-                    {{ task.comments }}
-                  </span>
-                  <div v-if="task.avatarCount" class="ml-auto d-flex" style="gap: -4px;">
-                    <v-avatar
-                      v-for="i in task.avatarCount"
-                      :key="i"
-                      size="22"
-                      color="grey-lighten-2"
-                      style="margin-left: -4px; border: 2px solid white;"
-                    >
-                      <v-icon size="16" color="grey-darken-1">mdi-account</v-icon>
-                    </v-avatar>
-                  </div>
-                </div>
-              </v-card>
-            </div>
-          </div>
+            :column="column"
+            @task-click="openDetail"
+            @rename-column="onRenameColumn"
+            @delete-column="onDeleteColumn"
+          />
         </div>
-
-        <!-- Вид списком (заглушка) -->
-        <div v-else class="d-flex align-center justify-center pa-16 text-grey" style="margin-top: 32px;">
-          <span>Список задач</span>
-        </div>
+        <TaskListView
+          v-else
+          :columns="columns"
+          style="margin-top: 32px"
+          @task-click="openDetail"
+          @toggle-complete="onToggleComplete"
+          @delete-task="onDeleteTask"
+        />
       </div>
+
+      <CategoryDialog v-model="catDialog" @save="onCatSave" />
+
+      <TaskDialog
+        v-model="taskDialog"
+        :initial-form="taskInitialForm"
+        :columns="columns"
+        @save="onTaskSave"
+      />
     </v-main>
   </v-app>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import axios from 'axios'
 import Sidebar from '@/components/Sidebar.vue'
 import SearchBar from '@/components/SearchBar.vue'
-import ListRaw   from '@/assets/List.svg?raw'
+import KanbanColumn from '@/components/tasks/KanbanColumn.vue'
+import TaskListView from '@/components/tasks/TaskListView.vue'
+import TaskDialog from '@/components/tasks/TaskDialog.vue'
+import CategoryDialog from '@/components/tasks/CategoryDialog.vue'
+import ListRaw from '@/assets/List.svg?raw'
 import KanbanRaw from '@/assets/Kanban.svg?raw'
 
 const dyn = (raw) => raw.replace(/stroke="#[^"]+"/g, 'stroke="currentColor"')
-const ListSvg   = dyn(ListRaw)
+const ListSvg = dyn(ListRaw)
 const KanbanSvg = dyn(KanbanRaw)
 
 const sidebarOpen = ref(true)
-
 const viewTab = ref('columns')
+const catDialog = ref(false)
+const taskDialog = ref(false)
+const taskInitialForm = ref(null)
+const columns = ref([])
 
-const pluralCount = (n) => {
-  if (n === 1) return `${n} объект`
-  if (n >= 2 && n <= 4) return `${n} объекта`
-  return `${n} объектов`
+const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+
+// ── Helpers ────────────────────────────────────────────
+const toDate = (d) => {
+  if (!d) return null
+  return d instanceof Date ? d : new Date(d)
+}
+const fmtShort = (d) => {
+  const dt = toDate(d)
+  if (!dt || isNaN(dt)) return '—'
+  return `${String(dt.getDate()).padStart(2, '0')}.${String(dt.getMonth() + 1).padStart(2, '0')}.${dt.getFullYear()}`
 }
 
-const TAGS = {
-  urgent:   { label: 'Срочная',    bg: '#FFF3E0', color: '#E65100' },
-  event:    { label: 'Мероприятие', bg: '#E0F2F1', color: '#00695C' },
-  report:   { label: 'Отчет',      bg: '#E8F5E9', color: '#2E7D32' },
-  docs:     { label: 'Документы',  bg: '#E8EAF6', color: '#3949AB' },
-  dept:     { label: 'Отдел',      bg: '#FFF8E1', color: '#F57F17' },
+// ── Загрузка с сервера ─────────────────────────────────
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/api/tasks/categories')
+    columns.value = data
+  } catch (err) {
+    console.error('Не удалось загрузить задачи:', err)
+  }
+})
+
+// ── Open dialogs ───────────────────────────────────────
+const openCreate = () => {
+  taskInitialForm.value = null
+  taskDialog.value = true
 }
 
-const columns = [
-  {
-    id: 'planned',
-    title: 'Планируемые',
-    dotColor: 'amber-darken-1',
-    tasks: [
-      {
-        id: 1,
-        tags: [TAGS.urgent, TAGS.event],
-        title: 'Совещание о стратегии продвижения',
-        deadline: '24.03.2026',
-        subtasks: '10/124',
-        attachments: 5,
-        comments: 19,
-        avatarCount: 2,
-      },
-      {
-        id: 2,
-        tags: [TAGS.event, TAGS.urgent],
-        title: 'Улучшение качества обслуживания',
-        deadline: '18.03.2026',
-        subtasks: '12/52',
-        attachments: 1,
-        comments: 1,
-        avatarCount: 0,
-      },
-      {
-        id: 3,
-        tags: [TAGS.dept, TAGS.docs],
-        title: 'Создание отчета о доходах за месяц',
-        deadline: '19.03.2026',
-        subtasks: '4/5',
-        attachments: 2,
-        comments: 0,
-        avatarCount: 0,
-      },
-    ],
-  },
-  {
-    id: 'current',
-    title: 'Текущие',
-    dotColor: 'blue',
-    tasks: [
-      {
-        id: 4,
-        tags: [TAGS.report, TAGS.event, TAGS.urgent],
-        title: 'Акт сверки (I Квартал)',
-        deadline: '11.04.2026',
-        subtasks: '4/12',
-        attachments: 0,
-        comments: 1,
-        avatarCount: 0,
-      },
-      {
-        id: 5,
-        tags: [TAGS.report, TAGS.docs],
-        title: 'Оформить контракт №26-213',
-        deadline: '18.03.2026',
-        subtasks: '12/64',
-        attachments: 1,
-        comments: 23,
-        avatarCount: 0,
-      },
-      {
-        id: 6,
-        tags: [TAGS.dept, TAGS.urgent],
-        title: 'Счета по напиткам (МБОУ СОШ №8)',
-        deadline: '24.01.2026',
-        subtasks: '3/4',
-        attachments: 2,
-        comments: 51,
-        avatarCount: 0,
-      },
-      {
-        id: 7,
-        tags: [TAGS.event, TAGS.urgent],
-        title: 'Встреча с поставщиком ООО "Фудсток"',
-        deadline: '15.01.2026',
-        subtasks: '0/12',
-        attachments: 4,
-        comments: 3,
-        avatarCount: 0,
-      },
-    ],
-  },
-  {
-    id: 'done',
-    title: 'Завершенные',
-    dotColor: 'success',
-    tasks: [
-      {
-        id: 8,
-        tags: [TAGS.report, TAGS.docs],
-        title: 'Оформить контракт №25-201',
-        deadline: '01.12.2025',
-        subtasks: '2/15',
-        attachments: 12,
-        comments: 1,
-        avatarCount: 0,
-      },
-      {
-        id: 9,
-        tags: [TAGS.dept, TAGS.docs],
-        title: 'Отчет по доходам, 2025 г.',
-        deadline: '24.12.2025',
-        subtasks: '1/53',
-        attachments: 2,
-        comments: 21,
-        avatarCount: 0,
-      },
-    ],
-  },
-]
+const openDetail = (task, column) => {
+  taskInitialForm.value = {
+    id: task.id,
+    title: task.title,
+    description: task.description || '',
+    lists: task.lists || [],
+    deadlineRaw: task.deadlineRaw || null,
+    participants: task.participants || [],
+    tags: task.tags || [],
+    enterprise: task.enterprise || '',
+    catId: column.id,
+    attachments: Array.isArray(task.attachments) ? task.attachments : [],
+    comments: Array.isArray(task.comments) ? task.comments : [],
+    history: task.history || [],
+  }
+  taskDialog.value = true
+}
+
+// ── Save handlers ──────────────────────────────────────
+const onCatSave = async ({ name, color }) => {
+  try {
+    const { data } = await api.post('/api/tasks/categories', { name, color })
+    columns.value.push(data)
+  } catch (err) {
+    console.error('Ошибка сохранения категории:', err)
+    alert(err.response?.data?.message || 'Не удалось сохранить категорию')
+  }
+}
+
+const onToggleComplete = async (task, completed) => {
+  task.completed = completed
+  const col = columns.value.find((c) => c.tasks.some((t) => t.id === task.id))
+  if (!col) return
+  try {
+    await api.put(`/api/tasks/${task.id}`, {
+      catId:        col.id,
+      title:        task.title,
+      description:  task.description,
+      deadlineRaw:  task.deadlineRaw ? new Date(task.deadlineRaw).toISOString() : null,
+      enterprise:   task.enterprise,
+      tags:         task.tags,
+      lists:        task.lists,
+      participants: task.participants,
+      attachments:  task.attachments,
+      comments:     task.comments,
+      history:      task.history,
+      completed:    completed ? 1 : 0,
+    })
+  } catch (err) {
+    task.completed = !completed
+    console.error('Ошибка обновления задачи:', err)
+  }
+}
+
+const onDeleteTask = (task, col) => {
+  const idx = col.tasks.findIndex((t) => t.id === task.id)
+  if (idx >= 0) col.tasks.splice(idx, 1)
+}
+
+const onRenameColumn = async ({ id, title, color }) => {
+  try {
+    await api.put(`/api/tasks/categories/${id}`, { name: title, color })
+    const col = columns.value.find((c) => c.id === id)
+    if (col) col.title = title
+  } catch (err) {
+    console.error('Ошибка переименования категории:', err)
+  }
+}
+
+const onDeleteColumn = async (id) => {
+  try {
+    await api.delete(`/api/tasks/categories/${id}`)
+    const idx = columns.value.findIndex((c) => c.id === id)
+    if (idx >= 0) columns.value.splice(idx, 1)
+  } catch (err) {
+    console.error('Ошибка удаления категории:', err)
+  }
+}
+
+const onTaskSave = async (formData) => {
+  const deadlineRaw = formData.deadlineRaw ? new Date(formData.deadlineRaw) : null
+  const targetCol = columns.value.find((c) => c.id === formData.catId) || columns.value[0]
+
+  try {
+    if (formData.id) {
+      await api.put(`/api/tasks/${formData.id}`, {
+        catId:        formData.catId,
+        title:        formData.title,
+        description:  formData.description,
+        deadlineRaw:  deadlineRaw ? deadlineRaw.toISOString() : null,
+        enterprise:   formData.enterprise,
+        tags:         formData.tags,
+        lists:        formData.lists,
+        participants: formData.participants,
+        attachments:  formData.attachments,
+        comments:     formData.comments,
+        history:      formData.history,
+      })
+
+      for (const col of columns.value) {
+        const idx = col.tasks.findIndex((t) => t.id === formData.id)
+        if (idx < 0) continue
+        const orig = col.tasks[idx]
+        col.tasks[idx] = {
+          ...orig,
+          title:        formData.title,
+          description:  formData.description,
+          lists:        formData.lists,
+          deadlineRaw,
+          deadline:     deadlineRaw ? fmtShort(deadlineRaw) : orig.deadline,
+          tags:         formData.tags,
+          enterprise:   formData.enterprise,
+          participants: formData.participants,
+          avatarCount:  formData.participants.length,
+          attachments:  formData.attachments.length ? formData.attachments : orig.attachments,
+          comments:     formData.comments.length ? formData.comments : orig.comments,
+          history:      formData.history,
+        }
+        if (formData.catId && col.id !== formData.catId) {
+          const [moved] = col.tasks.splice(idx, 1)
+          targetCol.tasks.push(moved)
+        }
+        break
+      }
+    } else {
+      const { data: newTask } = await api.post('/api/tasks', {
+        catId:        formData.catId || (targetCol ? targetCol.id : null),
+        title:        formData.title,
+        description:  formData.description,
+        deadlineRaw:  deadlineRaw ? deadlineRaw.toISOString() : null,
+        enterprise:   formData.enterprise,
+        tags:         formData.tags,
+        lists:        formData.lists,
+        participants: formData.participants,
+        attachments:  formData.attachments,
+        comments:     formData.comments,
+      })
+      if (targetCol) targetCol.tasks.push(newTask)
+    }
+  } catch (err) {
+    console.error('Ошибка сохранения задачи:', err)
+    alert(err.response?.data?.message || 'Не удалось сохранить задачу')
+  }
+}
 </script>
 
 <style scoped>
@@ -316,17 +305,13 @@ const columns = [
   min-width: 36px !important;
   flex-shrink: 0;
 }
-
 .toolbar-no-padding :deep(.v-toolbar__content) {
   padding: 0 !important;
 }
-
-/* Заголовок Tasks: 64px = совпадает с высотой шапки Sidebar */
 .tasks-header {
   height: 64px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
-
 .tab-icon {
   display: inline-flex;
   align-items: center;
@@ -335,34 +320,12 @@ const columns = [
   height: 16px;
   flex-shrink: 0;
 }
-
 .kanban-board {
   display: flex;
   gap: 16px;
   overflow-x: auto;
   align-items: flex-start;
   padding-bottom: 16px;
-}
-
-.kanban-column {
-  min-width: 280px;
-  width: 280px;
-  flex-shrink: 0;
-}
-
-.create-task-btn {
-  background-color: #f5f5f5 !important;
-  color: #757575 !important;
-  border: 1px dashed #bdbdbd !important;
-}
-
-.task-card {
-  border-color: #e0e0e0 !important;
-  transition: box-shadow 0.15s;
-}
-
-.task-card:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
 </style>
 
