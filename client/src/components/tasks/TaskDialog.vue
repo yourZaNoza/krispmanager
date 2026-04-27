@@ -282,24 +282,36 @@
             <div class="mb-5">
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-body-2 font-weight-medium">Предприятие</span>
-                <v-btn icon size="x-small" variant="plain" @click="entInput = !entInput">
-                  <v-icon size="16">mdi-plus</v-icon>
-                </v-btn>
+                <v-menu v-model="entMenu" :close-on-content-click="false" location="bottom end" max-height="300">
+                  <template #activator="{ props: p }">
+                    <v-btn icon size="x-small" variant="plain" v-bind="p">
+                      <v-icon size="16">mdi-plus</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-card rounded="lg" min-width="200" class="pa-2">
+                    <p v-if="!enterprises.length" class="text-caption text-grey px-2 py-1 mb-0">
+                      Нет сохранённых предприятий
+                    </p>
+                    <div
+                      v-for="ent in enterprises"
+                      :key="ent.id"
+                      class="px-2 py-2 rounded mb-1 tag-option"
+                      @click="selectEnterprise(ent)"
+                    >
+                      <div class="d-flex align-center" style="gap: 8px">
+                        <v-icon
+                          size="14"
+                          :style="{ opacity: form.enterprise === ent.name ? 1 : 0, color: '#037247' }"
+                        >mdi-check</v-icon>
+                        <span class="text-body-2">{{ ent.name }}</span>
+                      </div>
+                    </div>
+                  </v-card>
+                </v-menu>
               </div>
-              <v-chip v-if="form.enterprise && !entInput" size="small" rounded="sm" closable @click:close="form.enterprise = ''">
+              <v-chip v-if="form.enterprise" size="small" rounded="sm" closable @click:close="form.enterprise = ''">
                 {{ form.enterprise }}
               </v-chip>
-              <v-text-field
-                v-if="entInput"
-                v-model="form.enterprise"
-                variant="outlined"
-                density="compact"
-                hide-details
-                autofocus
-                placeholder="Название"
-                @keyup.enter="entInput = false"
-                @blur="entInput = false"
-              />
             </div>
 
             <!-- Category -->
@@ -356,7 +368,8 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onMounted } from 'vue'
+import axios from 'axios'
 
 const props = defineProps({
   modelValue:  { type: Boolean, required: true },
@@ -365,12 +378,26 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'save'])
 
+const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+
 // Local dialog state
-const dateMenu  = ref(false)
-const tagsMenu  = ref(false)
-const catMenu   = ref(false)
-const entInput  = ref(false)
+const dateMenu   = ref(false)
+const tagsMenu   = ref(false)
+const catMenu    = ref(false)
+const entMenu    = ref(false)
 const listDialog = ref(false)
+
+// Enterprises list
+const enterprises = ref([])
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/api/enterprises')
+    enterprises.value = data.flatMap(cat => cat.enterprises)
+  } catch (err) {
+    console.error('Ошибка загрузки предприятий:', err)
+  }
+})
 const newListName = ref('')
 const newComment  = ref('')
 const showHistory = ref(true)
@@ -401,7 +428,7 @@ watch(() => props.modelValue, (v) => {
     form.value = emptyForm()
   }
   showHistory.value = true
-  entInput.value = false
+  entMenu.value = false
   newComment.value = ''
 })
 
@@ -469,6 +496,12 @@ const downloadAttachment = async (att) => {
     a.download = att.name
     a.click()
   }
+}
+
+// Enterprise
+const selectEnterprise = (ent) => {
+  form.value.enterprise = ent.name
+  entMenu.value = false
 }
 
 // Comments

@@ -26,14 +26,24 @@ exports.register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    await Employee.create(name, email, hashedPassword);
+    const created = await Employee.create(name, email, hashedPassword);
+    const userId = created.insertId;
 
-    const token = jwt.sign({ email }, process.env.JWT_SECRET || "secret_key", {
-      expiresIn: "24h",
+    const token = jwt.sign(
+      { id: userId, email },
+      process.env.JWT_SECRET || "secret_key",
+      { expiresIn: "24h" }
+    );
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 24 * 60 * 60 * 1000,
     });
-
-    res.cookie("token", token, { httpOnly: true });
-    res.status(201).json({ message: "Регистрация успешна" });
+    res.status(201).json({
+      message: "Регистрация успешна",
+      user: { id: userId, name, email },
+    });
   } catch (error) {
     console.error("Ошибка в authController:", error);
     res.status(500).json({ message: "Ошибка сервера", error: error.message });

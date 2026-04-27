@@ -88,6 +88,8 @@
         />
       </div>
 
+      <CookieConsent />
+
       <CategoryDialog v-model="catDialog" @save="onCatSave" />
 
       <TaskDialog
@@ -109,6 +111,7 @@ import KanbanColumn from '@/components/tasks/KanbanColumn.vue'
 import TaskListView from '@/components/tasks/TaskListView.vue'
 import TaskDialog from '@/components/tasks/TaskDialog.vue'
 import CategoryDialog from '@/components/tasks/CategoryDialog.vue'
+import CookieConsent from '@/components/CookieConsent.vue'
 import ListRaw from '@/assets/List.svg?raw'
 import KanbanRaw from '@/assets/Kanban.svg?raw'
 

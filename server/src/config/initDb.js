@@ -39,6 +39,40 @@ async function initDb() {
   await addColumnSafe('tasks', 'history',       'JSON')
   await addColumnSafe('tasks', 'completed',    'TINYINT(1) DEFAULT 0')
 
+  // Таблица категорий предприятий (новая — создаём если нет)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS enterprise_categories (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT DEFAULT NULL,
+      title VARCHAR(255) NOT NULL,
+      color VARCHAR(50) DEFAULT '#037247'
+    )
+  `)
+
+  // Таблица предприятий уже существует — добавляем недостающие колонки
+  await addColumnSafe('enterprises', 'user_id',     'INT DEFAULT NULL')
+  await addColumnSafe('enterprises', 'category_id', 'INT DEFAULT NULL')
+  await addColumnSafe('enterprises', 'city',        'VARCHAR(255) DEFAULT NULL')
+  await addColumnSafe('enterprises', 'phone',       'VARCHAR(50) DEFAULT NULL')
+
+  // Таблица категорий контактов
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS contact_categories (
+      id      INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT DEFAULT NULL,
+      title   VARCHAR(255) NOT NULL,
+      color   VARCHAR(50) DEFAULT '#037247'
+    )
+  `)
+
+  // Таблица контактов уже может существовать — добавляем недостающие колонки
+  await modifyColumnSafe('contacts', 'id_employee', 'INT DEFAULT NULL')
+  await addColumnSafe('contacts', 'user_id',     'INT DEFAULT NULL')
+  await addColumnSafe('contacts', 'category_id', 'INT DEFAULT NULL')
+  await addColumnSafe('contacts', 'city',        'VARCHAR(255) DEFAULT NULL')
+  await addColumnSafe('contacts', 'email',       'VARCHAR(255) DEFAULT NULL')
+  await addColumnSafe('contacts', 'phone',       'VARCHAR(50)  DEFAULT NULL')
+
   console.log('Схема БД обновлена')
 }
 
