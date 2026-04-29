@@ -44,16 +44,24 @@
         <v-icon size="13">mdi-comment-outline</v-icon>
         {{ commentCount }}
       </span>
-      <div v-if="participantCount" class="ml-auto d-flex">
-        <v-avatar
-          v-for="i in participantCount"
+      <div v-if="task.participants?.length" class="ml-auto d-flex">
+        <v-tooltip
+          v-for="(p, i) in task.participants.slice(0, 3)"
           :key="i"
-          size="22"
-          color="grey-lighten-2"
-          style="margin-left: -4px; border: 2px solid white"
+          :text="p.name || ''"
+          location="top"
         >
-          <v-icon size="16" color="grey-darken-1">mdi-account</v-icon>
-        </v-avatar>
+          <template #activator="{ props: tp }">
+            <v-avatar
+              v-bind="tp"
+              size="22"
+              color="grey-lighten-2"
+              style="margin-left: -4px; border: 2px solid white"
+            >
+              <span style="font-size: 9px; color: #424242">{{ getInitials(p.name) }}</span>
+            </v-avatar>
+          </template>
+        </v-tooltip>
       </div>
     </div>
   </v-card>
@@ -87,9 +95,15 @@ const subtasksText = computed(() => {
   return props.task.subtasks || ''
 })
 
-const attachCount    = computed(() => Array.isArray(props.task.attachments) ? props.task.attachments.length : props.task.attachments)
-const commentCount   = computed(() => Array.isArray(props.task.comments)    ? props.task.comments.length    : props.task.comments)
-const participantCount = computed(() => props.task.avatarCount || props.task.participants?.length || 0)
+const attachCount  = computed(() => Array.isArray(props.task.attachments) ? props.task.attachments.length : props.task.attachments)
+const commentCount = computed(() => Array.isArray(props.task.comments)    ? props.task.comments.length    : props.task.comments)
+
+const getInitials = (name) => {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
 </script>
 
 <style scoped>

@@ -55,6 +55,18 @@ async function initDb() {
   await addColumnSafe('enterprises', 'city',        'VARCHAR(255) DEFAULT NULL')
   await addColumnSafe('enterprises', 'phone',       'VARCHAR(50) DEFAULT NULL')
 
+  // Таблица заметок уже может существовать — добавляем недостающие колонки
+  await modifyColumnSafe('notes', 'id_employee', 'INT DEFAULT NULL')
+  await modifyColumnSafe('notes', 'description', 'TEXT DEFAULT NULL')
+  await addColumnSafe('notes', 'user_id', 'INT DEFAULT NULL')
+  await addColumnSafe('notes', 'title',   'VARCHAR(500) DEFAULT ""')
+  await addColumnSafe('notes', 'time',    'VARCHAR(10) DEFAULT NULL')
+  await addColumnSafe('notes', 'tags',     'JSON')
+  await addColumnSafe('notes', 'lists',    'JSON')
+  await addColumnSafe('notes', 'comments', 'JSON')
+  await addColumnSafe('notes', 'history',     'JSON')
+  await addColumnSafe('notes', 'attachments', 'JSON')
+
   // Таблица категорий контактов
   await db.execute(`
     CREATE TABLE IF NOT EXISTS contact_categories (
@@ -72,6 +84,9 @@ async function initDb() {
   await addColumnSafe('contacts', 'city',        'VARCHAR(255) DEFAULT NULL')
   await addColumnSafe('contacts', 'email',       'VARCHAR(255) DEFAULT NULL')
   await addColumnSafe('contacts', 'phone',       'VARCHAR(50)  DEFAULT NULL')
+
+  // employees: добавляем поле роли
+  await addColumnSafe('employees', 'role', "VARCHAR(50) DEFAULT 'сотрудник'")
 
   console.log('Схема БД обновлена')
 }

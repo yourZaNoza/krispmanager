@@ -92,10 +92,48 @@ exports.login = async (req, res) => {
         name: user.name,
         email: user.email,
         position: user.position,
+        role: user.role || 'сотрудник',
       },
     });
   } catch (error) {
     console.error("Ошибка в authController.login:", error);
     res.status(500).json({ message: "Ошибка сервера при авторизации" });
+  }
+};
+
+exports.me = async (req, res) => {
+  try {
+    const user = await Employee.findByEmail(req.user.email);
+    if (!user) return res.status(404).json({ message: "Пользователь не найден" });
+    res.json({ id: user.id, name: user.name, email: user.email, position: user.position, role: user.role || 'сотрудник' });
+  } catch (error) {
+    res.status(500).json({ message: "Ошибка сервера" });
+  }
+};
+
+exports.updateProfile = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) return res.status(401).json({ message: "Не авторизован" });
+
+    const { name, email, position, role } = req.body;
+    if (!name) return res.status(400).json({ message: "Имя обязательно" });
+
+    const ROLES = ['сотрудник', 'менеджер', 'руководитель'];
+    const safeRole = ROLES.includes(role) ? role : 'сотрудник';
+
+    await Employee.updateProfile(userId, { name, email, position, role: safeRole });
+
+    const updated = await Employee.findById(userId);
+    res.json({
+      id: updated.id,
+      name: updated.name,
+      email: updated.email,
+      position: updated.position,
+      role: updated.role || 'сотрудник',
+    });
+  } catch (error) {
+    console.error("Ошибка updateProfile:", error);
+    res.status(500).json({ message: "Ошибка сервера", error: error.message });
   }
 };

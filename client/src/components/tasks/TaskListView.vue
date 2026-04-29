@@ -49,15 +49,23 @@
 
           <!-- Participant avatars -->
           <div v-if="task.participants?.length" class="avatars-wrap">
-            <v-avatar
-              v-for="(_, i) in task.participants.slice(0, 3)"
+            <v-tooltip
+              v-for="(p, i) in task.participants.slice(0, 3)"
               :key="i"
-              size="24"
-              color="grey-lighten-2"
-              :style="{ marginLeft: i > 0 ? '-6px' : '0', border: '2px solid white', zIndex: 10 - i }"
+              :text="p.name || ''"
+              location="top"
             >
-              <v-icon size="13" color="grey-darken-1">mdi-account</v-icon>
-            </v-avatar>
+              <template #activator="{ props: tp }">
+                <v-avatar
+                  v-bind="tp"
+                  size="24"
+                  color="grey-lighten-2"
+                  :style="{ marginLeft: i > 0 ? '-6px' : '0', border: '2px solid white', zIndex: 10 - i }"
+                >
+                  <span style="font-size: 9px; color: #424242">{{ getInitials(p.name) }}</span>
+                </v-avatar>
+              </template>
+            </v-tooltip>
           </div>
 
           <!-- Tags -->
@@ -152,6 +160,13 @@ const confirmDelete = () => {
 // ── Helpers ─────────────────────────────────────────────
 const pluralCount = (n) =>
   n === 1 ? `${n} объект` : n >= 2 && n <= 4 ? `${n} объекта` : `${n} объектов`
+
+const getInitials = (name) => {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
 </script>
 
 <style scoped>

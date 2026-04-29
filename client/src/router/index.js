@@ -10,6 +10,7 @@ import Contacts from '../views/Contacts.vue'
 import Companies from '../views/Companies.vue'
 import Analytics from '../views/Analytics.vue'
 import Settings from '../views/Settings.vue'
+import Archive from '../views/Archive.vue'
 
 const routes = [
   {
@@ -56,6 +57,11 @@ const routes = [
     path: '/settings',
     name: 'Settings',
     component: Settings,
+  },
+  {
+    path: '/archive',
+    name: 'Archive',
+    component: Archive,
   },
   {
     path: '/user-agreement',

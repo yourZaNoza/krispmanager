@@ -207,18 +207,52 @@
             <div class="mb-5">
               <div class="d-flex align-center justify-space-between mb-2">
                 <span class="text-body-2 font-weight-medium">Участники</span>
-                <v-btn icon size="x-small" variant="plain"><v-icon size="16">mdi-plus</v-icon></v-btn>
+                <v-menu v-model="participantsMenu" :close-on-content-click="false" location="bottom end" max-height="300">
+                  <template #activator="{ props: p }">
+                    <v-btn icon size="x-small" variant="plain" v-bind="p">
+                      <v-icon size="16">mdi-plus</v-icon>
+                    </v-btn>
+                  </template>
+                  <v-card rounded="lg" min-width="220" class="pa-2">
+                    <p v-if="!contacts.length" class="text-caption text-grey px-2 py-1 mb-0">
+                      Нет сохранённых контактов
+                    </p>
+                    <div
+                      v-for="contact in contacts"
+                      :key="contact.id"
+                      class="px-2 py-2 rounded mb-1 tag-option"
+                      @click="toggleParticipant(contact)"
+                    >
+                      <div class="d-flex align-center" style="gap: 8px">
+                        <v-icon size="14" :style="{ opacity: isParticipantAdded(contact) ? 1 : 0, color: '#037247' }">mdi-check</v-icon>
+                        <v-avatar size="24" color="grey-lighten-2" style="flex-shrink: 0">
+                          <span style="font-size: 10px; color: #616161">{{ getInitials(contact.name) }}</span>
+                        </v-avatar>
+                        <span class="text-body-2">{{ contact.name }}</span>
+                      </div>
+                    </div>
+                  </v-card>
+                </v-menu>
               </div>
-              <div v-if="form.participants && form.participants.length" class="d-flex">
-                <v-avatar
-                  v-for="(_, pi) in form.participants"
+              <div v-if="form.participants && form.participants.length" class="d-flex flex-wrap" style="gap: 4px">
+                <v-tooltip
+                  v-for="(participant, pi) in form.participants"
                   :key="pi"
-                  size="28"
-                  color="grey-lighten-2"
-                  style="margin-left: -4px; border: 2px solid white"
+                  :text="participant.name"
+                  location="top"
                 >
-                  <v-icon size="16" color="grey-darken-1">mdi-account</v-icon>
-                </v-avatar>
+                  <template #activator="{ props: tp }">
+                    <v-avatar
+                      v-bind="tp"
+                      size="28"
+                      color="grey-lighten-2"
+                      style="border: 2px solid white; cursor: pointer"
+                      @click="removeParticipant(participant)"
+                    >
+                      <span style="font-size: 11px; color: #424242">{{ getInitials(participant.name) }}</span>
+                    </v-avatar>
+                  </template>
+                </v-tooltip>
               </div>
             </div>
 
@@ -381,14 +415,16 @@ const emit = defineEmits(['update:modelValue', 'save'])
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
 // Local dialog state
-const dateMenu   = ref(false)
-const tagsMenu   = ref(false)
-const catMenu    = ref(false)
-const entMenu    = ref(false)
-const listDialog = ref(false)
+const dateMenu         = ref(false)
+const tagsMenu         = ref(false)
+const catMenu          = ref(false)
+const entMenu          = ref(false)
+const listDialog       = ref(false)
+const participantsMenu = ref(false)
 
-// Enterprises list
+// Enterprises and contacts lists
 const enterprises = ref([])
+const contacts    = ref([])
 
 onMounted(async () => {
   try {
@@ -396,6 +432,12 @@ onMounted(async () => {
     enterprises.value = data.flatMap(cat => cat.enterprises)
   } catch (err) {
     console.error('Ошибка загрузки предприятий:', err)
+  }
+  try {
+    const { data } = await api.get('/api/contacts')
+    contacts.value = data.flatMap(cat => cat.contacts || [])
+  } catch (err) {
+    console.error('Ошибка загрузки контактов:', err)
   }
 })
 const newListName = ref('')
@@ -496,6 +538,25 @@ const downloadAttachment = async (att) => {
     a.download = att.name
     a.click()
   }
+}
+
+// Participants
+const getInitials = (name) => {
+  if (!name) return '?'
+  const parts = name.trim().split(/\s+/)
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+}
+const isParticipantAdded = (contact) =>
+  form.value.participants.some(p => p.id === contact.id)
+const toggleParticipant = (contact) => {
+  const idx = form.value.participants.findIndex(p => p.id === contact.id)
+  if (idx >= 0) form.value.participants.splice(idx, 1)
+  else form.value.participants.push({ id: contact.id, name: contact.name })
+}
+const removeParticipant = (participant) => {
+  const idx = form.value.participants.findIndex(p => p.id === participant.id)
+  if (idx >= 0) form.value.participants.splice(idx, 1)
 }
 
 // Enterprise

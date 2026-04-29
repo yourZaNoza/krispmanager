@@ -74,6 +74,17 @@
                 placeholder="Не указана"
               />
             </div>
+
+            <div>
+              <p class="text-caption text-grey mb-1">Роль</p>
+              <v-select
+                v-model="form.role"
+                :items="ROLES"
+                variant="outlined"
+                density="comfortable"
+                hide-details
+              />
+            </div>
           </div>
 
           <v-divider class="my-6" />
@@ -100,6 +111,9 @@
         <v-snackbar v-model="saved" color="success" timeout="2000" location="bottom right">
           Изменения сохранены
         </v-snackbar>
+        <v-snackbar v-model="showError" color="error" timeout="3000" location="bottom right">
+          {{ saveError }}
+        </v-snackbar>
       </div>
     </v-main>
   </v-app>
@@ -107,22 +121,34 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import axios from 'axios'
 import Sidebar from '@/components/Sidebar.vue'
 import SearchBar from '@/components/SearchBar.vue'
 
+const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+
+const ROLES = ['сотрудник', 'менеджер', 'руководитель']
+
 const sidebarOpen = ref(true)
 const saved = ref(false)
+const saveError = ref('')
+const showError = ref(false)
 const profileForm = ref(null)
 
-const form = ref({ name: '', email: '', position: '' })
-const original = ref({ name: '', email: '', position: '' })
+const form = ref({ name: '', email: '', position: '', role: 'сотрудник' })
+const original = ref({ name: '', email: '', position: '', role: 'сотрудник' })
 
 onMounted(() => {
   try {
     const stored = localStorage.getItem('user')
     if (stored) {
       const user = JSON.parse(stored)
-      form.value = { name: user.name || '', email: user.email || '', position: user.position || '' }
+      form.value = {
+        name: user.name || '',
+        email: user.email || '',
+        position: user.position || '',
+        role: user.role || 'сотрудник',
+      }
       original.value = { ...form.value }
     }
   } catch {}
@@ -136,15 +162,26 @@ const initials = computed(() => {
 const save = async () => {
   const { valid } = await profileForm.value.validate()
   if (!valid) return
+  saveError.value = ''
 
   try {
+    const { data } = await api.put('/api/auth/profile', {
+      name: form.value.name,
+      email: form.value.email,
+      position: form.value.position,
+      role: form.value.role,
+    })
+
     const stored = localStorage.getItem('user')
     const user = stored ? JSON.parse(stored) : {}
-    const updated = { ...user, name: form.value.name, email: form.value.email, position: form.value.position }
+    const updated = { ...user, name: data.name, email: data.email, position: data.position, role: data.role }
     localStorage.setItem('user', JSON.stringify(updated))
     original.value = { ...form.value }
     saved.value = true
-  } catch {}
+  } catch (err) {
+    saveError.value = err.response?.data?.message || 'Ошибка сохранения'
+    showError.value = true
+  }
 }
 
 const reset = () => {

@@ -5,6 +5,7 @@ const authRoutes = require("./src/routes/authRoutes");
 const taskRoutes = require("./src/routes/taskRoutes");
 const enterpriseRoutes = require("./src/routes/enterpriseRoutes");
 const contactRoutes    = require("./src/routes/contactRoutes");
+const noteRoutes       = require("./src/routes/noteRoutes");
 const initDb = require("./src/config/initDb");
 
 const app = express();
@@ -15,13 +16,15 @@ app.use(
     credentials: true,
   }),
 );
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/enterprises", enterpriseRoutes);
 app.use("/api/contacts",   contactRoutes);
+app.use("/api/notes",      noteRoutes);
 
 const PORT = process.env.PORT || 3000;
 

@@ -44,6 +44,22 @@
           />
         </template>
       </v-list-item>
+
+      <v-list-item
+        v-if="hasArchiveAccess"
+        to="/archive"
+        title="Архив"
+        rounded="0"
+        class="nav-list-item"
+      >
+        <template #prepend>
+          <span
+            class="nav-icon"
+            :style="{ color: isActive('/archive') ? '#0C693B' : '#727272' }"
+            v-html="FoldersSvg"
+          />
+        </template>
+      </v-list-item>
     </v-list>
 
     <v-divider class="my-1" />
@@ -124,6 +140,7 @@ import BriefcaseRaw from '@/assets/Briefcase.svg?raw'
 import ChartRaw from '@/assets/ChartLineUp.svg?raw'
 import GearRaw from '@/assets/Gear.svg?raw'
 import QuestionRaw from '@/assets/Question.svg?raw'
+import FoldersRaw from '@/assets/Folders.svg?raw'
 
 defineProps({
   modelValue: { type: Boolean, default: true },
@@ -140,6 +157,8 @@ const logout = () => {
 }
 
 const userName = ref('')
+const userRole = ref('сотрудник')
+
 const initials = computed(() => {
   const parts = (userName.value || '').trim().split(' ')
   return (
@@ -151,12 +170,17 @@ const initials = computed(() => {
   )
 })
 
+const hasArchiveAccess = computed(() =>
+  userRole.value === 'менеджер' || userRole.value === 'руководитель'
+)
+
 onMounted(() => {
   try {
     const stored = localStorage.getItem('user')
     if (stored) {
       const user = JSON.parse(stored)
       userName.value = user.name || ''
+      userRole.value = user.role || 'сотрудник'
     }
   } catch {
     userName.value = ''
@@ -166,9 +190,10 @@ onMounted(() => {
 // Заменяем хардкод-цвета на currentColor для управления через CSS
 const dyn = (raw) => raw.replace(/stroke="#[^"]+"/g, 'stroke="currentColor"')
 
-const ChartSvg = dyn(ChartRaw)
-const GearSvg = dyn(GearRaw)
+const ChartSvg    = dyn(ChartRaw)
+const GearSvg     = dyn(GearRaw)
 const QuestionSvg = dyn(QuestionRaw)
+const FoldersSvg  = dyn(FoldersRaw)
 
 const mainNavItems = [
   { path: '/notifications', svg: dyn(BellRaw), label: 'Уведомления' },
