@@ -1,5 +1,5 @@
 <template>
-  <div class="task-list-view">
+  <div class="task-list-view" v-bind="$attrs">
     <div v-for="col in columns" :key="col.id" class="category-section">
 
       <!-- Category header -->
@@ -98,34 +98,36 @@
       </template>
 
     </div>
-  </div>
 
-  <!-- Delete confirmation dialog -->
-  <v-dialog v-model="deleteDialog" max-width="360">
-    <v-card rounded="lg" class="pa-6">
-      <p class="text-body-1 font-weight-medium mb-6 text-center">
-        Вы уверены, что хотите удалить задачу?
-      </p>
-      <div class="d-flex justify-center" style="gap: 12px">
-        <v-btn
-          variant="outlined"
-          color="grey-darken-1"
-          class="text-none"
-          @click="deleteDialog = false"
-        >Отмена</v-btn>
-        <v-btn
-          variant="flat"
-          color="red"
-          class="text-none text-white"
-          @click="confirmDelete"
-        >Удалить</v-btn>
-      </div>
-    </v-card>
-  </v-dialog>
+    <!-- Delete confirmation dialog -->
+    <v-dialog v-model="deleteDialog" max-width="360">
+      <v-card rounded="lg" class="pa-6">
+        <p class="text-body-1 font-weight-medium mb-6 text-center">
+          Вы уверены, что хотите удалить задачу?
+        </p>
+        <div class="d-flex justify-center" style="gap: 12px">
+          <v-btn
+            variant="outlined"
+            color="grey-darken-1"
+            class="text-none"
+            @click="deleteDialog = false"
+          >Отмена</v-btn>
+          <v-btn
+            variant="flat"
+            color="red"
+            class="text-none text-white"
+            @click="confirmDelete"
+          >Удалить</v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
+
+defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
   columns: { type: Array, required: true },
@@ -256,4 +258,14 @@ const getInitials = (name) => {
 /* Remove default checkbox padding/margin */
 .task-checkbox :deep(.v-input__control) { flex: 0 0 auto; }
 .task-checkbox :deep(.v-selection-control) { min-height: unset; }
+
+</style>
+
+<style>
+.v-theme--dark .task-list-view { border-color: rgba(255, 255, 255, 0.12); }
+.v-theme--dark .task-list-view .cat-header { background: transparent !important; border-color: rgba(255, 255, 255, 0.12); }
+.v-theme--dark .task-list-view .cat-header:hover { background: rgba(255, 255, 255, 0.04) !important; }
+.v-theme--dark .task-list-view .task-row { background: transparent !important; border-color: rgba(255, 255, 255, 0.06); }
+.v-theme--dark .task-list-view .task-row:hover { background: rgba(255, 255, 255, 0.04) !important; }
+.v-theme--dark .task-list-view .task-row--done { background: transparent !important; }
 </style>

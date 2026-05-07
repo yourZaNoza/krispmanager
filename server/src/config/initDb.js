@@ -88,6 +88,61 @@ async function initDb() {
   // employees: добавляем поле роли
   await addColumnSafe('employees', 'role', "VARCHAR(50) DEFAULT 'сотрудник'")
 
+  // Создаём 3 глобальные категории задач по умолчанию (если их ещё нет)
+  const [[{ cnt }]] = await db.execute(
+    'SELECT COUNT(*) AS cnt FROM tasks_category WHERE user_id IS NULL'
+  )
+  if (Number(cnt) === 0) {
+    await db.execute(`
+      INSERT INTO tasks_category (user_id, title, color) VALUES
+        (NULL, 'Планы',      '#2196F3'),
+        (NULL, 'В процессе', '#FF9800'),
+        (NULL, 'Готово',     '#4CAF50')
+    `)
+  }
+
+  // Удаляем все пользовательские категории — оставляем только глобальные
+  const [userCats] = await db.execute(
+    'SELECT id_category FROM tasks_category WHERE user_id IS NOT NULL'
+  )
+  if (userCats.length > 0) {
+    const ids = userCats.map(c => c.id_category).join(',')
+    await db.execute(`DELETE FROM tasks WHERE id_category IN (${ids})`)
+    await db.execute('DELETE FROM tasks_category WHERE user_id IS NOT NULL')
+  }
+
+  // employees: позиция/должность
+  await addColumnSafe('employees', 'position', "VARCHAR(255) DEFAULT ''")
+
+  // Глобальные теги для задач и заметок
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS global_tags (
+      id    INT AUTO_INCREMENT PRIMARY KEY,
+      scope VARCHAR(10)  NOT NULL,
+      label VARCHAR(100) NOT NULL,
+      bg    VARCHAR(50)  DEFAULT '#f5f5f5',
+      color VARCHAR(50)  DEFAULT '#616161'
+    )
+  `)
+
+  // Таблица уведомлений
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id         INT AUTO_INCREMENT PRIMARY KEY,
+      user_id    INT NOT NULL,
+      actor_id   INT DEFAULT NULL,
+      actor_name VARCHAR(255) DEFAULT NULL,
+      type       VARCHAR(50)  DEFAULT 'task_updated',
+      task_id    INT DEFAULT NULL,
+      task_title VARCHAR(500) DEFAULT NULL,
+      message    TEXT,
+      is_read    TINYINT(1) DEFAULT 0,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_notif_user (user_id),
+      INDEX idx_notif_created (created_at)
+    )
+  `)
+
   console.log('Схема БД обновлена')
 }
 

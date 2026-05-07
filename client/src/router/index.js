@@ -11,6 +11,7 @@ import Companies from '../views/Companies.vue'
 import Analytics from '../views/Analytics.vue'
 import Settings from '../views/Settings.vue'
 import Archive from '../views/Archive.vue'
+import Help from '../views/Help.vue'
 
 const routes = [
   {
@@ -62,6 +63,11 @@ const routes = [
     path: '/archive',
     name: 'Archive',
     component: Archive,
+  },
+  {
+    path: '/help',
+    name: 'Help',
+    component: Help,
   },
   {
     path: '/user-agreement',

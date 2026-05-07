@@ -69,9 +69,9 @@ import ContactColumn from '@/components/contacts/ContactColumn.vue'
 import ContactDialog from '@/components/contacts/ContactDialog.vue'
 
 const sidebarOpen = ref(true)
-const columns     = ref([])
-const dialog      = ref(false)
-const dialogData  = ref(null)
+const columns = ref([])
+const dialog = ref(false)
+const dialogData = ref(null)
 
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
@@ -97,34 +97,34 @@ const openEdit = (contact) => {
 const onSave = async (form) => {
   try {
     if (form.id) {
-      await api.put(`/api/contacts/${form.id}`, {
+      const { data } = await api.put(`/api/contacts/${form.id}`, {
         categoryId: form.categoryId,
-        name:       form.name,
-        city:       form.city,
-        email:      form.email,
-        phone:      form.phone,
+        name: form.name,
+        city: form.city,
+        email: form.email,
+        phone: form.phone,
       })
       for (const col of columns.value) {
-        const idx = col.contacts.findIndex(c => c.id === form.id)
+        const idx = col.contacts.findIndex((c) => c.id === form.id)
         if (idx < 0) continue
         if (col.id === form.categoryId) {
-          col.contacts[idx] = { ...col.contacts[idx], ...form }
+          col.contacts[idx] = { ...col.contacts[idx], ...data }
         } else {
-          const [moved] = col.contacts.splice(idx, 1)
-          const target = columns.value.find(c => c.id === form.categoryId)
-          if (target) target.contacts.push({ ...moved, ...form, categoryId: form.categoryId })
+          col.contacts.splice(idx, 1)
+          const target = columns.value.find((c) => c.id === form.categoryId)
+          if (target) target.contacts.push(data)
         }
         break
       }
     } else {
       const { data } = await api.post('/api/contacts', {
         categoryId: form.categoryId,
-        name:       form.name,
-        city:       form.city,
-        email:      form.email,
-        phone:      form.phone,
+        name: form.name,
+        city: form.city,
+        email: form.email,
+        phone: form.phone,
       })
-      const target = columns.value.find(c => c.id === form.categoryId)
+      const target = columns.value.find((c) => c.id === form.categoryId)
       if (target) target.contacts.push(data)
     }
   } catch (err) {
@@ -137,8 +137,11 @@ const onDelete = async (contact) => {
   try {
     await api.delete(`/api/contacts/${contact.id}`)
     for (const col of columns.value) {
-      const idx = col.contacts.findIndex(c => c.id === contact.id)
-      if (idx >= 0) { col.contacts.splice(idx, 1); break }
+      const idx = col.contacts.findIndex((c) => c.id === contact.id)
+      if (idx >= 0) {
+        col.contacts.splice(idx, 1)
+        break
+      }
     }
   } catch (err) {
     console.error('Ошибка удаления контакта:', err)

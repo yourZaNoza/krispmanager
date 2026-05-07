@@ -281,8 +281,10 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
-import { TAGS, tagStyle } from '@/composables/noteTags'
+import { ref, watch, computed, onMounted } from 'vue'
+import { TAGS, tagStyle, loadNoteTags } from '@/composables/noteTags'
+
+onMounted(loadNoteTags)
 
 const props = defineProps({
   modelValue:  { type: Boolean, default: false },
@@ -399,7 +401,7 @@ function adjustTime(minutes) {
 }
 
 /* ---------- Tags ---------- */
-const availableTags = computed(() => TAGS.filter(t => !form.value.tags.includes(t.name)))
+const availableTags = computed(() => TAGS.value.filter(t => !form.value.tags.includes(t.name)))
 function addTag(name)    { if (!form.value.tags.includes(name)) form.value.tags = [...form.value.tags, name] }
 function removeTag(name) { form.value.tags = form.value.tags.filter(t => t !== name) }
 

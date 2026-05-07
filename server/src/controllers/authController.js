@@ -111,6 +111,33 @@ exports.me = async (req, res) => {
   }
 };
 
+exports.getAllUsers = async (req, res) => {
+  try {
+    const me = await Employee.findById(req.user?.id)
+    if (me?.role !== 'администратор') return res.status(403).json({ message: 'Только администратор' })
+    const users = await Employee.findAll()
+    res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, position: u.position || '', role: u.role || 'сотрудник' })))
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' })
+  }
+}
+
+exports.updateUserRole = async (req, res) => {
+  try {
+    const me = await Employee.findById(req.user?.id)
+    if (me?.role !== 'администратор') return res.status(403).json({ message: 'Только администратор' })
+    const targetId = parseInt(req.params.id)
+    const ROLES = ['сотрудник', 'менеджер', 'администратор']
+    const role = ROLES.includes(req.body.role) ? req.body.role : 'сотрудник'
+    const target = await Employee.findById(targetId)
+    if (!target) return res.status(404).json({ message: 'Пользователь не найден' })
+    await Employee.updateProfile(targetId, { name: target.name, email: target.email, position: target.position || '', role })
+    res.json({ message: 'Роль обновлена' })
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' })
+  }
+}
+
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user && req.user.id;
@@ -119,7 +146,7 @@ exports.updateProfile = async (req, res) => {
     const { name, email, position, role } = req.body;
     if (!name) return res.status(400).json({ message: "Имя обязательно" });
 
-    const ROLES = ['сотрудник', 'менеджер', 'руководитель'];
+    const ROLES = ['сотрудник', 'менеджер', 'администратор'];
     const safeRole = ROLES.includes(role) ? role : 'сотрудник';
 
     await Employee.updateProfile(userId, { name, email, position, role: safeRole });

@@ -115,6 +115,49 @@
           {{ saveError }}
         </v-snackbar>
       </div>
+
+      <!-- Совместные задачи -->
+      <div class="px-6 pb-8" style="max-width: 800px;">
+        <v-divider class="mb-6" />
+        <div class="d-flex align-center mb-4" style="gap: 10px;">
+          <span style="font-size: 18px; font-weight: 600;">Совместные задачи</span>
+          <v-chip size="small" color="success" variant="tonal">{{ participatingTasks.length }}</v-chip>
+        </div>
+
+        <div v-if="loadingTasks" class="d-flex justify-center py-6">
+          <v-progress-circular indeterminate color="success" size="28" />
+        </div>
+
+        <div v-else-if="!participatingTasks.length" class="text-grey text-body-2 py-4">
+          Вы не добавлены ни в одну задачу другого сотрудника
+        </div>
+
+        <div v-else class="d-flex flex-column" style="gap: 8px;">
+          <div
+            v-for="task in participatingTasks"
+            :key="task.id"
+            class="part-task-row"
+          >
+            <div class="d-flex align-center justify-space-between">
+              <div class="d-flex flex-column" style="gap: 2px; min-width: 0;">
+                <span class="text-body-2 font-weight-medium text-truncate">{{ task.title }}</span>
+                <span v-if="task.enterprise" class="text-caption text-grey text-truncate">{{ task.enterprise }}</span>
+              </div>
+              <div class="d-flex align-center flex-shrink-0" style="gap: 8px; margin-left: 12px;">
+                <v-chip
+                  v-if="task.completed"
+                  size="x-small"
+                  color="success"
+                  variant="tonal"
+                >Выполнена</v-chip>
+                <span class="text-caption text-grey" style="white-space: nowrap;">
+                  <v-icon size="12" class="mr-1">mdi-calendar-outline</v-icon>{{ task.deadline }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </v-main>
   </v-app>
 </template>
@@ -127,7 +170,7 @@ import SearchBar from '@/components/SearchBar.vue'
 
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
-const ROLES = ['сотрудник', 'менеджер', 'руководитель']
+const ROLES = ['сотрудник', 'менеджер', 'администратор']
 
 const sidebarOpen = ref(true)
 const saved = ref(false)
@@ -135,10 +178,13 @@ const saveError = ref('')
 const showError = ref(false)
 const profileForm = ref(null)
 
+const participatingTasks = ref([])
+const loadingTasks = ref(false)
+
 const form = ref({ name: '', email: '', position: '', role: 'сотрудник' })
 const original = ref({ name: '', email: '', position: '', role: 'сотрудник' })
 
-onMounted(() => {
+onMounted(async () => {
   try {
     const stored = localStorage.getItem('user')
     if (stored) {
@@ -152,6 +198,16 @@ onMounted(() => {
       original.value = { ...form.value }
     }
   } catch {}
+
+  loadingTasks.value = true
+  try {
+    const { data } = await api.get('/api/tasks/participating')
+    participatingTasks.value = data
+  } catch (e) {
+    console.error('Failed to load participating tasks:', e)
+  } finally {
+    loadingTasks.value = false
+  }
 })
 
 const initials = computed(() => {
@@ -204,5 +260,19 @@ const reset = () => {
 
 .toolbar-no-padding :deep(.v-toolbar__content) {
   padding: 0 !important;
+}
+
+.part-task-row {
+  padding: 10px 14px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  background: #fafafa;
+}
+</style>
+
+<style>
+.v-theme--dark .part-task-row {
+  background: transparent !important;
+  border-color: rgba(255, 255, 255, 0.12) !important;
 }
 </style>

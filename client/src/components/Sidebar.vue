@@ -1,4 +1,9 @@
 <template>
+  <NotificationsPanel
+    v-model="notifOpen"
+    @unread-count="unreadCount = $event"
+  />
+
   <v-navigation-drawer
     :model-value="modelValue"
     @update:model-value="$emit('update:modelValue', $event)"
@@ -14,6 +19,31 @@
 
     <!-- Основная навигация -->
     <v-list density="compact" nav class="py-2">
+      <!-- Уведомления — особый пункт с панелью вместо навигации -->
+      <v-list-item
+        rounded="0"
+        class="nav-list-item"
+        :class="{ 'v-list-item--active': notifOpen }"
+        title="Уведомления"
+        @click.prevent="notifOpen = !notifOpen"
+      >
+        <template #prepend>
+          <span
+            class="nav-icon"
+            :style="{ color: notifOpen ? (isDark ? 'white' : '#0C693B') : '#727272' }"
+            v-html="BellSvg"
+          />
+        </template>
+        <template #append>
+          <v-chip
+            v-if="unreadCount > 0"
+            size="x-small"
+            color="success"
+            style="font-size: 10px; height: 16px; min-width: 16px;"
+          >{{ unreadCount }}</v-chip>
+        </template>
+      </v-list-item>
+
       <v-list-item
         v-for="item in mainNavItems"
         :key="item.path"
@@ -25,7 +55,7 @@
         <template #prepend>
           <span
             class="nav-icon"
-            :style="{ color: isActive(item.path) ? '#0C693B' : '#727272' }"
+            :style="{ color: isActive(item.path) ? (isDark ? 'white' : '#0C693B') : '#727272' }"
             v-html="item.svg"
           />
         </template>
@@ -39,7 +69,7 @@
         <template #prepend>
           <span
             class="nav-icon"
-            :style="{ color: isActive('/analytics') ? '#0C693B' : '#727272' }"
+            :style="{ color: isActive('/analytics') ? (isDark ? 'white' : '#0C693B') : '#727272' }"
             v-html="ChartSvg"
           />
         </template>
@@ -55,7 +85,7 @@
         <template #prepend>
           <span
             class="nav-icon"
-            :style="{ color: isActive('/archive') ? '#0C693B' : '#727272' }"
+            :style="{ color: isActive('/archive') ? (isDark ? 'white' : '#0C693B') : '#727272' }"
             v-html="FoldersSvg"
           />
         </template>
@@ -69,7 +99,7 @@
         <template #prepend>
           <span
             class="nav-icon"
-            :style="{ color: isActive('/settings') ? '#0C693B' : '#727272' }"
+            :style="{ color: isActive('/settings') ? (isDark ? 'white' : '#0C693B') : '#727272' }"
             v-html="GearSvg"
           />
         </template>
@@ -79,7 +109,7 @@
         <template #prepend>
           <span
             class="nav-icon"
-            :style="{ color: isActive('/help') ? '#0C693B' : '#727272' }"
+            :style="{ color: isActive('/help') ? (isDark ? 'white' : '#0C693B') : '#727272' }"
             v-html="QuestionSvg"
           />
         </template>
@@ -131,6 +161,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useTheme } from 'vuetify'
+import axios from 'axios'
+import NotificationsPanel from '@/components/NotificationsPanel.vue'
+import { useEvents } from '@/composables/useEvents'
 
 import BellRaw from '@/assets/Bell.svg?raw'
 import ClipboardRaw from '@/assets/ClipboardText.svg?raw'
@@ -150,6 +184,21 @@ defineEmits(['update:modelValue'])
 const route = useRoute()
 const router = useRouter()
 const isActive = (path) => route.path === path
+
+const { global: vTheme } = useTheme()
+const isDark = computed(() => vTheme.current.value.dark)
+
+const notifOpen   = ref(false)
+const unreadCount = ref(0)
+
+const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+
+async function fetchUnreadCount() {
+  try {
+    const { data } = await api.get('/api/notifications/unread-count')
+    unreadCount.value = data.unread
+  } catch { /* silent */ }
+}
 
 const logout = () => {
   localStorage.removeItem('user')
@@ -171,7 +220,7 @@ const initials = computed(() => {
 })
 
 const hasArchiveAccess = computed(() =>
-  userRole.value === 'менеджер' || userRole.value === 'руководитель'
+  userRole.value === 'менеджер' || userRole.value === 'администратор'
 )
 
 onMounted(() => {
@@ -185,18 +234,27 @@ onMounted(() => {
   } catch {
     userName.value = ''
   }
+
+  fetchUnreadCount()
+})
+
+// Increment badge in real-time when notifications arrive via SSE
+useEvents((event) => {
+  if (event.type === 'notification' && !notifOpen.value) {
+    unreadCount.value++
+  }
 })
 
 // Заменяем хардкод-цвета на currentColor для управления через CSS
 const dyn = (raw) => raw.replace(/stroke="#[^"]+"/g, 'stroke="currentColor"')
 
+const BellSvg     = dyn(BellRaw)
 const ChartSvg    = dyn(ChartRaw)
 const GearSvg     = dyn(GearRaw)
 const QuestionSvg = dyn(QuestionRaw)
 const FoldersSvg  = dyn(FoldersRaw)
 
 const mainNavItems = [
-  { path: '/notifications', svg: dyn(BellRaw), label: 'Уведомления' },
   { path: '/tasks', svg: dyn(ClipboardRaw), label: 'Задачи' },
   { path: '/notes', svg: dyn(NoteRaw), label: 'Заметки' },
   { path: '/contacts', svg: dyn(AddressRaw), label: 'Контакты' },
@@ -283,5 +341,24 @@ const mainNavItems = [
 <style>
 .nav-icon svg path {
   stroke: currentColor !important;
+}
+
+/* ── Тёмная тема сайдбара ─────────────────────────────── */
+.v-theme--dark .sidebar-title {
+  color: white !important;
+}
+
+/* Активный пункт: убираем заливку, добавляем белую рамку */
+.v-theme--dark .nav-list-item.v-list-item--active {
+  background-color: transparent !important;
+  outline: 1px solid rgba(255, 255, 255, 0.55);
+  outline-offset: -1px;
+  border-radius: 4px !important;
+}
+.v-theme--dark .nav-list-item.v-list-item--active > .v-list-item__overlay {
+  opacity: 0 !important;
+}
+.v-theme--dark .nav-list-item.v-list-item--active .v-list-item-title {
+  color: white !important;
 }
 </style>

@@ -56,15 +56,6 @@
         >
           Добавить задачу
         </v-btn>
-        <v-btn
-          variant="outlined"
-          color="success"
-          class="text-none"
-          prepend-icon="mdi-plus"
-          @click="catDialog = true"
-        >
-          Добавить категорию
-        </v-btn>
       </div>
 
       <div class="px-5 pb-5">
@@ -90,8 +81,6 @@
 
       <CookieConsent />
 
-      <CategoryDialog v-model="catDialog" @save="onCatSave" />
-
       <TaskDialog
         v-model="taskDialog"
         :initial-form="taskInitialForm"
@@ -110,7 +99,6 @@ import SearchBar from '@/components/SearchBar.vue'
 import KanbanColumn from '@/components/tasks/KanbanColumn.vue'
 import TaskListView from '@/components/tasks/TaskListView.vue'
 import TaskDialog from '@/components/tasks/TaskDialog.vue'
-import CategoryDialog from '@/components/tasks/CategoryDialog.vue'
 import CookieConsent from '@/components/CookieConsent.vue'
 import ListRaw from '@/assets/List.svg?raw'
 import KanbanRaw from '@/assets/Kanban.svg?raw'
@@ -121,7 +109,6 @@ const KanbanSvg = dyn(KanbanRaw)
 
 const sidebarOpen = ref(true)
 const viewTab = ref('columns')
-const catDialog = ref(false)
 const taskDialog = ref(false)
 const taskInitialForm = ref(null)
 const columns = ref([])
@@ -174,16 +161,6 @@ const openDetail = (task, column) => {
 }
 
 // ── Save handlers ──────────────────────────────────────
-const onCatSave = async ({ name, color }) => {
-  try {
-    const { data } = await api.post('/api/tasks/categories', { name, color })
-    columns.value.push(data)
-  } catch (err) {
-    console.error('Ошибка сохранения категории:', err)
-    alert(err.response?.data?.message || 'Не удалось сохранить категорию')
-  }
-}
-
 const onToggleComplete = async (task, completed) => {
   task.completed = completed
   const col = columns.value.find((c) => c.tasks.some((t) => t.id === task.id))

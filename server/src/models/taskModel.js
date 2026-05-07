@@ -34,6 +34,35 @@ class Task {
     return result.insertId
   }
 
+  static async findById(taskId) {
+    const [rows] = await db.execute('SELECT * FROM tasks WHERE id = ?', [taskId])
+    return rows[0] || null
+  }
+
+  // Tasks where userId appears in participants JSON array
+  static async findParticipating(userId) {
+    const [rows] = await db.execute(
+      `SELECT t.* FROM tasks t
+       WHERE JSON_CONTAINS(t.participants, JSON_OBJECT('id', ?))
+       ORDER BY t.created_at DESC`,
+      [userId]
+    )
+    return rows
+  }
+
+  // All tasks for an employee: own tasks + tasks where they're a participant
+  static async findAllForEmployee(userId) {
+    const [rows] = await db.execute(
+      `SELECT * FROM tasks
+       WHERE user_id = ?
+          OR JSON_CONTAINS(participants, JSON_OBJECT('id', ?))
+       ORDER BY created_at DESC`,
+      [userId, userId]
+    )
+    const seen = new Set()
+    return rows.filter(r => { if (seen.has(r.id)) return false; seen.add(r.id); return true })
+  }
+
   static async update(taskId, userId, categoryId, data) {
     await db.execute(
       `UPDATE tasks SET

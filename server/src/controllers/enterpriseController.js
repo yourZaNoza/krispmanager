@@ -42,6 +42,46 @@ exports.getAll = async (req, res) => {
   }
 }
 
+// POST /api/enterprises/categories
+exports.createCategory = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id
+    if (!userId) return res.status(401).json({ message: 'Не авторизован' })
+    const { title, color } = req.body
+    if (!title) return res.status(400).json({ message: 'title обязателен' })
+    const cat = await EnterpriseCategory.create(userId, title, color)
+    res.status(201).json({ id: cat.id, title: cat.title, color: cat.color })
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера', error: err.message })
+  }
+}
+
+// PUT /api/enterprises/categories/:id
+exports.updateCategory = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id
+    if (!userId) return res.status(401).json({ message: 'Не авторизован' })
+    const { title, color } = req.body
+    if (!title) return res.status(400).json({ message: 'title обязателен' })
+    await EnterpriseCategory.update(parseInt(req.params.id), userId, title, color)
+    res.json({ message: 'Категория обновлена' })
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера', error: err.message })
+  }
+}
+
+// DELETE /api/enterprises/categories/:id
+exports.deleteCategory = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id
+    if (!userId) return res.status(401).json({ message: 'Не авторизован' })
+    await EnterpriseCategory.delete(parseInt(req.params.id), userId)
+    res.json({ message: 'Категория удалена' })
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера', error: err.message })
+  }
+}
+
 // POST /api/enterprises
 exports.createEnterprise = async (req, res) => {
   try {

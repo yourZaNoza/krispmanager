@@ -99,4 +99,5 @@ const footerDate = computed(() => {
   -webkit-box-orient: vertical;
   line-height: 1.5;
 }
+
 </style>

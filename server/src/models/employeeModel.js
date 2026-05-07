@@ -25,6 +25,23 @@ class Employee {
       [name, email, position || '', role || 'сотрудник', id],
     );
   }
+
+  static async findAll() {
+    const [rows] = await db.execute(
+      'SELECT id, name, email, position, role FROM employees ORDER BY name ASC'
+    )
+    return rows
+  }
+
+  static async findRegisteredEmails(emails) {
+    if (!emails.length) return new Map()
+    const placeholders = emails.map(() => '?').join(', ')
+    const [rows] = await db.execute(
+      `SELECT id, email FROM employees WHERE email IN (${placeholders})`,
+      emails
+    )
+    return new Map(rows.map(r => [r.email.toLowerCase(), r.id]))
+  }
 }
 
 module.exports = Employee;

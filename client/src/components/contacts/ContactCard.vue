@@ -21,10 +21,14 @@
         <v-icon size="13">mdi-email-outline</v-icon>
         <span class="email-link">{{ contact.email }}</span>
       </span>
-      <span v-if="contact.phone" class="d-flex align-center" style="gap: 4px">
-        <v-icon size="13">mdi-phone-outline</v-icon>
-        {{ contact.phone }}
-      </span>
+      <div class="d-flex align-center justify-space-between" style="min-height: 18px">
+        <span v-if="contact.phone" class="d-flex align-center" style="gap: 4px">
+          <v-icon size="13">mdi-phone-outline</v-icon>
+          {{ contact.phone }}
+        </span>
+        <span v-else />
+        <v-icon v-if="contact.isRegistered" size="18" color="#4CAF50">mdi-check-circle</v-icon>
+      </div>
     </div>
   </v-card>
 </template>

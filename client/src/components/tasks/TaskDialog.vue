@@ -214,11 +214,11 @@
                     </v-btn>
                   </template>
                   <v-card rounded="lg" min-width="220" class="pa-2">
-                    <p v-if="!contacts.length" class="text-caption text-grey px-2 py-1 mb-0">
-                      Нет сохранённых контактов
+                    <p v-if="!registeredContacts.length" class="text-caption text-grey px-2 py-1 mb-0">
+                      Нет зарегистрированных участников
                     </p>
                     <div
-                      v-for="contact in contacts"
+                      v-for="contact in registeredContacts"
                       :key="contact.id"
                       class="px-2 py-2 rounded mb-1 tag-option"
                       @click="toggleParticipant(contact)"
@@ -402,8 +402,11 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import axios from 'axios'
+
+const tagApi = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const serverTaskTags = ref([])
 
 const props = defineProps({
   modelValue:  { type: Boolean, required: true },
@@ -423,8 +426,9 @@ const listDialog       = ref(false)
 const participantsMenu = ref(false)
 
 // Enterprises and contacts lists
-const enterprises = ref([])
-const contacts    = ref([])
+const enterprises        = ref([])
+const contacts           = ref([])
+const registeredContacts = computed(() => contacts.value.filter(c => c.isRegistered))
 
 onMounted(async () => {
   try {
@@ -439,19 +443,24 @@ onMounted(async () => {
   } catch (err) {
     console.error('Ошибка загрузки контактов:', err)
   }
+  try {
+    const { data } = await tagApi.get('/api/tags?scope=task')
+    if (data.length) serverTaskTags.value = data.map(t => ({ label: t.label, bg: t.bg, color: t.color }))
+  } catch { /* keep hardcoded fallback */ }
 })
 const newListName = ref('')
 const newComment  = ref('')
 const showHistory = ref(true)
 const fileInputRef = ref(null)
 
-const TAGS_LIST = [
+const TAGS_FALLBACK = [
   { label: 'Срочная',     bg: '#FFF3E0', color: '#E65100' },
   { label: 'Мероприятие', bg: '#E0F2F1', color: '#00695C' },
   { label: 'Отчет',       bg: '#E8F5E9', color: '#2E7D32' },
   { label: 'Документы',   bg: '#E8EAF6', color: '#3949AB' },
   { label: 'Отдел',       bg: '#FFF8E1', color: '#F57F17' },
 ]
+const TAGS_LIST = computed(() => serverTaskTags.value.length ? serverTaskTags.value : TAGS_FALLBACK)
 
 const emptyForm = () => ({
   id: null, title: '', description: '', lists: [],
@@ -547,12 +556,15 @@ const getInitials = (name) => {
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
   return (parts[0][0] + parts[1][0]).toUpperCase()
 }
-const isParticipantAdded = (contact) =>
-  form.value.participants.some(p => p.id === contact.id)
+const isParticipantAdded = (contact) => {
+  const pid = contact.employeeId ?? contact.id
+  return form.value.participants.some(p => p.id === pid)
+}
 const toggleParticipant = (contact) => {
-  const idx = form.value.participants.findIndex(p => p.id === contact.id)
+  const pid = contact.employeeId ?? contact.id
+  const idx = form.value.participants.findIndex(p => p.id === pid)
   if (idx >= 0) form.value.participants.splice(idx, 1)
-  else form.value.participants.push({ id: contact.id, name: contact.name })
+  else form.value.participants.push({ id: pid, name: contact.name })
 }
 const removeParticipant = (participant) => {
   const idx = form.value.participants.findIndex(p => p.id === participant.id)
@@ -566,9 +578,13 @@ const selectEnterprise = (ent) => {
 }
 
 // Comments
+const currentUserName = (() => {
+  try { return JSON.parse(localStorage.getItem('user') || '{}').name || 'Вы' } catch { return 'Вы' }
+})()
+
 const submitComment = () => {
   if (!newComment.value.trim()) return
-  form.value.comments.push({ author: 'Вы', text: newComment.value.trim(), time: new Date().toLocaleDateString('ru-RU') })
+  form.value.comments.push({ author: currentUserName, text: newComment.value.trim(), time: new Date().toLocaleDateString('ru-RU') })
   newComment.value = ''
 }
 
@@ -604,4 +620,5 @@ const saveTask = () => {
 .date-trigger:hover { background: #f5f5f5; }
 .tag-option { cursor: pointer; }
 .tag-option:hover { opacity: 0.8; }
+
 </style>
