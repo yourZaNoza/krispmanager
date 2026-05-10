@@ -25,14 +25,24 @@
       <div class="px-6 pb-6" style="max-width: 600px;">
         <!-- Аватар -->
         <div class="d-flex align-center mb-8" style="gap: 20px;">
-          <v-avatar size="80" color="grey-lighten-2">
-            <span class="text-h5 font-weight-medium text-grey-darken-2">
-              {{ initials }}
-            </span>
-          </v-avatar>
+          <div class="avatar-wrap" @click="triggerAvatarPick">
+            <UserAvatar :user-id="userId" :name="form.name" :size="80" />
+            <div class="avatar-overlay">
+              <v-progress-circular v-if="avatarLoading" indeterminate size="22" color="white" width="2" />
+              <v-icon v-else size="22" color="white">mdi-camera-outline</v-icon>
+            </div>
+          </div>
+          <input
+            ref="avatarInput"
+            type="file"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            style="display: none"
+            @change="onAvatarPick"
+          />
           <div>
             <p class="text-subtitle-1 font-weight-medium mb-0">{{ form.name || '—' }}</p>
-            <p class="text-body-2 text-grey">{{ form.email }}</p>
+            <p class="text-body-2 text-grey mb-1">{{ form.email }}</p>
+            <span class="text-caption text-grey">Нажмите на аватар для загрузки (до 25 МБ)</span>
           </div>
         </div>
 
@@ -165,8 +175,10 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
-import Sidebar from '@/components/Sidebar.vue'
-import SearchBar from '@/components/SearchBar.vue'
+import Sidebar     from '@/components/Sidebar.vue'
+import SearchBar   from '@/components/SearchBar.vue'
+import UserAvatar  from '@/components/UserAvatar.vue'
+import { setAvatarUrl } from '@/utils/avatarCache'
 
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
@@ -181,19 +193,54 @@ const profileForm = ref(null)
 const participatingTasks = ref([])
 const loadingTasks = ref(false)
 
-const form = ref({ name: '', email: '', position: '', role: 'сотрудник' })
+const form     = ref({ name: '', email: '', position: '', role: 'сотрудник' })
 const original = ref({ name: '', email: '', position: '', role: 'сотрудник' })
+const userId   = ref(null)
+
+const avatarInput   = ref(null)
+const avatarLoading = ref(false)
+const avatarError   = ref('')
+
+function triggerAvatarPick() { avatarInput.value?.click() }
+
+async function onAvatarPick(e) {
+  const file = e.target.files?.[0]
+  e.target.value = ''
+  if (!file) return
+  if (file.size > 25 * 1024 * 1024) {
+    avatarError.value = 'Файл слишком большой (максимум 25 МБ)'
+    showError.value = true
+    saveError.value = avatarError.value
+    return
+  }
+  avatarLoading.value = true
+  try {
+    const fd = new FormData()
+    fd.append('avatar', file)
+    const { data } = await api.post('/api/auth/avatar', fd)
+    setAvatarUrl(userId.value, data.avatar)
+    const stored = localStorage.getItem('user')
+    const u = stored ? JSON.parse(stored) : {}
+    localStorage.setItem('user', JSON.stringify({ ...u, avatar: data.avatar }))
+  } catch (err) {
+    saveError.value = err.response?.data?.message || 'Ошибка загрузки аватара'
+    showError.value = true
+  } finally {
+    avatarLoading.value = false
+  }
+}
 
 onMounted(async () => {
   try {
     const stored = localStorage.getItem('user')
     if (stored) {
       const user = JSON.parse(stored)
+      userId.value = user.id || null
       form.value = {
-        name: user.name || '',
-        email: user.email || '',
+        name:     user.name     || '',
+        email:    user.email    || '',
         position: user.position || '',
-        role: user.role || 'сотрудник',
+        role:     user.role     || 'сотрудник',
       }
       original.value = { ...form.value }
     }
@@ -208,11 +255,6 @@ onMounted(async () => {
   } finally {
     loadingTasks.value = false
   }
-})
-
-const initials = computed(() => {
-  const parts = (form.value.name || '').trim().split(' ')
-  return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2) || '?'
 })
 
 const save = async () => {

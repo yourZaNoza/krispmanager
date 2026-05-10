@@ -225,9 +225,7 @@
                     >
                       <div class="d-flex align-center" style="gap: 8px">
                         <v-icon size="14" :style="{ opacity: isParticipantAdded(contact) ? 1 : 0, color: '#037247' }">mdi-check</v-icon>
-                        <v-avatar size="24" color="grey-lighten-2" style="flex-shrink: 0">
-                          <span style="font-size: 10px; color: #616161">{{ getInitials(contact.name) }}</span>
-                        </v-avatar>
+                        <UserAvatar :user-id="contact.employeeId ?? contact.id" :name="contact.name" :size="24" style="flex-shrink: 0" />
                         <span class="text-body-2">{{ contact.name }}</span>
                       </div>
                     </div>
@@ -242,21 +240,38 @@
                   location="top"
                 >
                   <template #activator="{ props: tp }">
-                    <v-avatar
+                    <UserAvatar
                       v-bind="tp"
-                      size="28"
-                      color="grey-lighten-2"
+                      :user-id="participant.id"
+                      :name="participant.name"
+                      :size="28"
                       style="border: 2px solid white; cursor: pointer"
                       @click="removeParticipant(participant)"
-                    >
-                      <span style="font-size: 11px; color: #424242">{{ getInitials(participant.name) }}</span>
-                    </v-avatar>
+                    />
                   </template>
                 </v-tooltip>
               </div>
             </div>
 
-            <!-- Due date -->
+            <!-- Due date from -->
+            <div class="mb-3">
+              <p class="text-body-2 font-weight-medium mb-2">Срок с</p>
+              <v-menu v-model="dateFromMenu" :close-on-content-click="false" location="bottom start">
+                <template #activator="{ props: p }">
+                  <div v-bind="p" class="date-trigger">
+                    <v-icon size="15" color="grey-darken-1">mdi-calendar-outline</v-icon>
+                    <span class="text-body-2">{{ form.dateFromRaw ? fmtLong(form.dateFromRaw) : 'Выбрать дату' }}</span>
+                    <v-icon size="15" color="grey-darken-1">mdi-chevron-down</v-icon>
+                  </div>
+                </template>
+                <MiniCalendar
+                  :model-value="form.dateFromRaw"
+                  @update:model-value="(d) => { form.dateFromRaw = d; dateFromMenu = false }"
+                />
+              </v-menu>
+            </div>
+
+            <!-- Due date to -->
             <div class="mb-5">
               <p class="text-body-2 font-weight-medium mb-2">Срок до</p>
               <v-menu v-model="dateMenu" :close-on-content-click="false" location="bottom start">
@@ -267,10 +282,9 @@
                     <v-icon size="15" color="grey-darken-1">mdi-chevron-down</v-icon>
                   </div>
                 </template>
-                <v-date-picker
-                  v-model="form.deadlineRaw"
-                  color="#037247"
-                  @update:model-value="dateMenu = false"
+                <MiniCalendar
+                  :model-value="form.deadlineRaw"
+                  @update:model-value="(d) => { form.deadlineRaw = d; dateMenu = false }"
                 />
               </v-menu>
             </div>
@@ -292,8 +306,9 @@
                       @click="toggleTag(tag)"
                     >
                       <div class="d-flex align-center" style="gap: 6px">
-                        <v-icon size="14" :color="tag.color" :style="{ opacity: isTagOn(tag) ? 1 : 0 }">mdi-check</v-icon>
+                        <span class="task-tag-dot" :style="{ background: tag.color }" />
                         <span :style="{ color: tag.color, fontWeight: '500', fontSize: '13px' }">{{ tag.label }}</span>
+                        <v-icon v-if="isTagOn(tag)" size="13" :color="tag.color" class="ml-auto">mdi-check</v-icon>
                       </div>
                     </div>
                   </v-card>
@@ -404,6 +419,8 @@
 <script setup>
 import { ref, watch, computed, onMounted } from 'vue'
 import axios from 'axios'
+import MiniCalendar from '@/components/MiniCalendar.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const tagApi = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 const serverTaskTags = ref([])
@@ -419,6 +436,7 @@ const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: tr
 
 // Local dialog state
 const dateMenu         = ref(false)
+const dateFromMenu     = ref(false)
 const tagsMenu         = ref(false)
 const catMenu          = ref(false)
 const entMenu          = ref(false)
@@ -464,7 +482,7 @@ const TAGS_LIST = computed(() => serverTaskTags.value.length ? serverTaskTags.va
 
 const emptyForm = () => ({
   id: null, title: '', description: '', lists: [],
-  deadlineRaw: null, participants: [], tags: [],
+  deadlineRaw: null, dateFromRaw: null, participants: [], tags: [],
   enterprise: '', catId: null, attachments: [], comments: [], history: [],
 })
 const form = ref(emptyForm())
@@ -473,7 +491,8 @@ watch(() => props.modelValue, (v) => {
   if (!v) return
   if (props.initialForm) {
     const c = JSON.parse(JSON.stringify(props.initialForm))
-    if (c.deadlineRaw) c.deadlineRaw = new Date(c.deadlineRaw)
+    if (c.deadlineRaw) c.deadlineRaw   = new Date(c.deadlineRaw)
+    if (c.dateFromRaw) c.dateFromRaw   = new Date(c.dateFromRaw)
     form.value = c
   } else {
     form.value = emptyForm()
@@ -550,12 +569,6 @@ const downloadAttachment = async (att) => {
 }
 
 // Participants
-const getInitials = (name) => {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[1][0]).toUpperCase()
-}
 const isParticipantAdded = (contact) => {
   const pid = contact.employeeId ?? contact.id
   return form.value.participants.some(p => p.id === pid)
@@ -594,6 +607,7 @@ const saveTask = () => {
   emit('save', JSON.parse(JSON.stringify({
     ...form.value,
     deadlineRaw: form.value.deadlineRaw ? form.value.deadlineRaw.toISOString() : null,
+    dateFromRaw: form.value.dateFromRaw ? form.value.dateFromRaw.toISOString() : null,
   })))
   emit('update:modelValue', false)
 }
@@ -620,5 +634,12 @@ const saveTask = () => {
 .date-trigger:hover { background: #f5f5f5; }
 .tag-option { cursor: pointer; }
 .tag-option:hover { opacity: 0.8; }
+.task-tag-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
 
 </style>

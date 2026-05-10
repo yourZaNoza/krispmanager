@@ -1,6 +1,8 @@
 const Employee = require("../models/employeeModel");
-const bcrypt = require("bcryptjs");
-const jwt = require("jsonwebtoken");
+const bcrypt   = require("bcryptjs");
+const jwt      = require("jsonwebtoken");
+const path     = require("path");
+const fs       = require("fs");
 
 console.log("Проверка импорта Employee:", Employee);
 
@@ -88,11 +90,12 @@ exports.login = async (req, res) => {
     res.status(200).json({
       message: "Успешный вход",
       user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
+        id:       user.id,
+        name:     user.name,
+        email:    user.email,
         position: user.position,
-        role: user.role || 'сотрудник',
+        role:     user.role || 'сотрудник',
+        avatar:   user.avatar || null,
       },
     });
   } catch (error) {
@@ -105,7 +108,7 @@ exports.me = async (req, res) => {
   try {
     const user = await Employee.findByEmail(req.user.email);
     if (!user) return res.status(404).json({ message: "Пользователь не найден" });
-    res.json({ id: user.id, name: user.name, email: user.email, position: user.position, role: user.role || 'сотрудник' });
+    res.json({ id: user.id, name: user.name, email: user.email, position: user.position, role: user.role || 'сотрудник', avatar: user.avatar || null });
   } catch (error) {
     res.status(500).json({ message: "Ошибка сервера" });
   }
@@ -116,7 +119,7 @@ exports.getAllUsers = async (req, res) => {
     const me = await Employee.findById(req.user?.id)
     if (me?.role !== 'администратор') return res.status(403).json({ message: 'Только администратор' })
     const users = await Employee.findAll()
-    res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, position: u.position || '', role: u.role || 'сотрудник' })))
+    res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, position: u.position || '', role: u.role || 'сотрудник', avatar: u.avatar || null })))
   } catch (err) {
     res.status(500).json({ message: 'Ошибка сервера' })
   }
@@ -138,6 +141,37 @@ exports.updateUserRole = async (req, res) => {
   }
 }
 
+exports.uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'Файл не загружен' })
+    const userId = req.user.id
+
+    const user = await Employee.findById(userId)
+    if (user?.avatar) {
+      const oldFile = path.join(__dirname, '../../uploads/avatars', path.basename(user.avatar))
+      if (fs.existsSync(oldFile)) fs.unlinkSync(oldFile)
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`
+    await Employee.updateAvatar(userId, avatarUrl)
+    res.json({ avatar: avatarUrl })
+  } catch (err) {
+    console.error('uploadAvatar error:', err)
+    res.status(500).json({ message: 'Ошибка загрузки аватара' })
+  }
+}
+
+exports.getAllAvatars = async (req, res) => {
+  try {
+    const rows = await Employee.findAllWithAvatars()
+    const map = {}
+    for (const r of rows) map[r.id] = r.avatar
+    res.json(map)
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' })
+  }
+}
+
 exports.updateProfile = async (req, res) => {
   try {
     const userId = req.user && req.user.id;
@@ -153,11 +187,12 @@ exports.updateProfile = async (req, res) => {
 
     const updated = await Employee.findById(userId);
     res.json({
-      id: updated.id,
-      name: updated.name,
-      email: updated.email,
+      id:       updated.id,
+      name:     updated.name,
+      email:    updated.email,
       position: updated.position,
-      role: updated.role || 'сотрудник',
+      role:     updated.role || 'сотрудник',
+      avatar:   updated.avatar || null,
     });
   } catch (error) {
     console.error("Ошибка updateProfile:", error);

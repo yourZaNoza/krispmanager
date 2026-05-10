@@ -38,6 +38,7 @@ async function initDb() {
   await addColumnSafe('tasks', 'comments',      'JSON')
   await addColumnSafe('tasks', 'history',       'JSON')
   await addColumnSafe('tasks', 'completed',    'TINYINT(1) DEFAULT 0')
+  await addColumnSafe('tasks', 'date_from',   'DATE')
 
   // Таблица категорий предприятий (новая — создаём если нет)
   await db.execute(`
@@ -85,8 +86,9 @@ async function initDb() {
   await addColumnSafe('contacts', 'email',       'VARCHAR(255) DEFAULT NULL')
   await addColumnSafe('contacts', 'phone',       'VARCHAR(50)  DEFAULT NULL')
 
-  // employees: добавляем поле роли
-  await addColumnSafe('employees', 'role', "VARCHAR(50) DEFAULT 'сотрудник'")
+  // employees: добавляем поле роли и аватара
+  await addColumnSafe('employees', 'role',   "VARCHAR(50) DEFAULT 'сотрудник'")
+  await addColumnSafe('employees', 'avatar', 'VARCHAR(500) DEFAULT NULL')
 
   // Создаём 3 глобальные категории задач по умолчанию (если их ещё нет)
   const [[{ cnt }]] = await db.execute(
@@ -124,6 +126,25 @@ async function initDb() {
       color VARCHAR(50)  DEFAULT '#616161'
     )
   `)
+
+  // Засеиваем дефолтные теги если таблица пустая
+  const [[{ tagCnt }]] = await db.execute('SELECT COUNT(*) AS tagCnt FROM global_tags')
+  if (Number(tagCnt) === 0) {
+    await db.execute(`
+      INSERT INTO global_tags (scope, label, bg, color) VALUES
+        ('task', 'Срочная',     '#FFF0F0', '#D32F2F'),
+        ('task', 'Мероприятие', '#E8F5E9', '#388E3C'),
+        ('task', 'Отчет',       '#F3E5F5', '#7B1FA2'),
+        ('task', 'Документы',   '#E8EAF6', '#3949AB'),
+        ('task', 'Отдел',       '#FFF8E1', '#F57F17'),
+        ('note', 'Ежемесячное', '#E8F5E9', '#2E7D32'),
+        ('note', 'Личное',      '#FFF3E0', '#E65100'),
+        ('note', 'Важное',      '#FFFDE7', '#F57F17'),
+        ('note', 'Проект',      '#E3F2FD', '#1565C0'),
+        ('note', 'Срочное',     '#FFEBEE', '#C62828'),
+        ('note', 'Рабочее',     '#F3E5F5', '#6A1B9A')
+    `)
+  }
 
   // Таблица уведомлений
   await db.execute(`

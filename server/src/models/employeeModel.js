@@ -28,9 +28,20 @@ class Employee {
 
   static async findAll() {
     const [rows] = await db.execute(
-      'SELECT id, name, email, position, role FROM employees ORDER BY name ASC'
+      'SELECT id, name, email, position, role, avatar FROM employees ORDER BY name ASC'
     )
     return rows
+  }
+
+  static async findAllWithAvatars() {
+    const [rows] = await db.execute(
+      'SELECT id, avatar FROM employees WHERE avatar IS NOT NULL'
+    )
+    return rows
+  }
+
+  static async updateAvatar(id, avatarUrl) {
+    await db.execute('UPDATE employees SET avatar = ? WHERE id = ?', [avatarUrl, id])
   }
 
   static async findRegisteredEmails(emails) {

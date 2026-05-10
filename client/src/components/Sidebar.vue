@@ -122,11 +122,7 @@
       <div class="pa-3">
         <v-list-item class="px-0 user-item" style="margin-bottom: 12px" to="/profile">
           <template #prepend>
-            <v-avatar size="34" color="grey-lighten-2">
-              <span class="text-caption font-weight-medium text-grey-darken-2">
-                {{ initials }}
-              </span>
-            </v-avatar>
+            <UserAvatar :user-id="sidebarUserId" :name="userName" :size="34" />
           </template>
           <v-list-item-title class="text-body-2 font-weight-medium">
             {{ userName || '—' }}
@@ -164,7 +160,9 @@ import { useRoute, useRouter } from 'vue-router'
 import { useTheme } from 'vuetify'
 import axios from 'axios'
 import NotificationsPanel from '@/components/NotificationsPanel.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 import { useEvents } from '@/composables/useEvents'
+import { loadAvatars } from '@/utils/avatarCache'
 
 import BellRaw from '@/assets/Bell.svg?raw'
 import ClipboardRaw from '@/assets/ClipboardText.svg?raw'
@@ -207,17 +205,7 @@ const logout = () => {
 
 const userName = ref('')
 const userRole = ref('сотрудник')
-
-const initials = computed(() => {
-  const parts = (userName.value || '').trim().split(' ')
-  return (
-    parts
-      .map((p) => p[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2) || '?'
-  )
-})
+const sidebarUserId = ref(null)
 
 const hasArchiveAccess = computed(() =>
   userRole.value === 'менеджер' || userRole.value === 'администратор'
@@ -230,12 +218,14 @@ onMounted(() => {
       const user = JSON.parse(stored)
       userName.value = user.name || ''
       userRole.value = user.role || 'сотрудник'
+      sidebarUserId.value = user.id || null
     }
   } catch {
     userName.value = ''
   }
 
   fetchUnreadCount()
+  loadAvatars()
 })
 
 // Increment badge in real-time when notifications arrive via SSE

@@ -251,7 +251,7 @@
                     <v-list density="compact" rounded="lg" class="pa-1">
                       <v-list-item v-for="tag in availableTags" :key="tag.name" rounded="lg" @click="addTag(tag.name)">
                         <template #prepend>
-                          <span class="tag-dot mr-2" :style="{ background: tag.color }" />
+                          <span class="tag-dot" style="margin-right: 2px" :style="{ background: tag.color }" />
                         </template>
                         <v-list-item-title class="text-body-2">{{ tag.name }}</v-list-item-title>
                       </v-list-item>

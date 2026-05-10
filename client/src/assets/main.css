@@ -1,5 +1,18 @@
 @import './base.css';
 
+/* Filter bar: 8px inner padding on all pages */
+.filter-bar .v-field-label:not(.v-field-label--floating) {
+  transform: translateX(8px) translateY(-50%) !important;
+}
+.filter-bar .v-field__input {
+  padding-inline-start: 8px !important;
+  padding-inline-end: 8px !important;
+}
+.filter-bar .v-field__outline__start {
+  flex-basis: 8px !important;
+  min-width: 8px !important;
+}
+
 #app {
   width: 100%;
   min-height: 100vh;

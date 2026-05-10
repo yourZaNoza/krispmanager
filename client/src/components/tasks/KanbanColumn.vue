@@ -21,7 +21,7 @@
           @click="startEdit"
         >{{ column.title }}</span>
 
-        <span class="task-badge ml-2">{{ column.tasks.length }}</span>
+        <span class="task-badge ml-2">{{ visibleTasks.length }}</span>
 
         <v-spacer />
 
@@ -38,7 +38,7 @@
 
       <div class="d-flex flex-column" style="gap: 10px">
         <TaskCard
-          v-for="task in column.tasks"
+          v-for="task in visibleTasks"
           :key="task.id"
           :task="task"
           @click="$emit('task-click', task, column)"
@@ -112,9 +112,14 @@ import { ref, computed, nextTick } from 'vue'
 import TaskCard from './TaskCard.vue'
 
 const props = defineProps({
-  column: { type: Object, required: true },
+  column:     { type: Object,   required: true },
+  taskFilter: { default: null },
 })
 const emit = defineEmits(['task-click', 'rename-column', 'delete-column'])
+
+const visibleTasks = computed(() =>
+  props.taskFilter ? props.column.tasks.filter(props.taskFilter) : props.column.tasks
+)
 
 // ── Task delete ───────────────────────────────────────────
 const deleteTaskDialog = ref(false)

@@ -44,10 +44,17 @@
 
         <v-spacer />
 
-        <v-btn variant="outlined" color="grey-darken-2" class="text-none">
-          <v-icon start size="16">mdi-filter-variant</v-icon>
-          Фильтры
-        </v-btn>
+        <v-badge :content="activeFilterCount" :model-value="activeFilterCount > 0" color="#037247" floating>
+          <v-btn
+            variant="outlined"
+            :color="filterOpen || activeFilterCount > 0 ? '#037247' : 'grey-darken-2'"
+            class="text-none"
+            @click="filterOpen = !filterOpen"
+          >
+            <v-icon start size="16">mdi-filter-variant</v-icon>
+            Фильтры
+          </v-btn>
+        </v-badge>
         <v-btn
           style="background-color: #037247"
           class="text-none text-white"
@@ -58,12 +65,72 @@
         </v-btn>
       </div>
 
+      <!-- Filter panel -->
+      <Transition name="filter">
+        <div v-if="filterOpen" class="filter-bar px-5 py-3">
+          <div class="d-flex align-center flex-wrap" style="gap: 10px">
+            <v-select
+              v-model="filters.catIds"
+              :items="columns.map(c => ({ value: c.id, title: c.title }))"
+              item-value="value"
+              item-title="title"
+              label="Категория"
+              multiple chips closable-chips
+              density="compact" variant="outlined" hide-details
+              no-data-text="Нет вариантов"
+              class="filter-sel"
+            />
+            <v-select
+              v-model="filters.tags"
+              :items="allTags"
+              label="Метки"
+              multiple chips closable-chips
+              density="compact" variant="outlined" hide-details
+              no-data-text="Нет меток"
+              class="filter-sel"
+            />
+            <v-select
+              v-model="filters.enterprises"
+              :items="allEnterprises"
+              label="Предприятие"
+              multiple chips closable-chips
+              density="compact" variant="outlined" hide-details
+              no-data-text="Нет предприятий"
+              class="filter-sel"
+            />
+            <v-text-field
+              v-model="filters.dateFrom"
+              label="Срок с"
+              type="date"
+              density="compact" variant="outlined" hide-details clearable
+              class="filter-date"
+            />
+            <v-text-field
+              v-model="filters.dateTo"
+              label="Срок по"
+              type="date"
+              density="compact" variant="outlined" hide-details clearable
+              class="filter-date"
+            />
+            <v-btn
+              v-if="activeFilterCount > 0"
+              variant="text" size="small" color="grey-darken-1" class="text-none"
+              @click="resetFilters"
+            >
+              <v-icon start size="14">mdi-close-circle-outline</v-icon>
+              Сбросить
+            </v-btn>
+          </div>
+        </div>
+      </Transition>
+
       <div class="px-5 pb-5">
         <div v-if="viewTab === 'columns'" class="kanban-board" style="margin-top: 32px">
           <KanbanColumn
-            v-for="column in columns"
+            v-for="column in visibleColumns"
             :key="column.id"
             :column="column"
+            :task-filter="taskFilter"
             @task-click="openDetail"
             @rename-column="onRenameColumn"
             @delete-column="onDeleteColumn"
@@ -71,7 +138,8 @@
         </div>
         <TaskListView
           v-else
-          :columns="columns"
+          :columns="visibleColumns"
+          :task-filter="taskFilter"
           style="margin-top: 32px"
           @task-click="openDetail"
           @toggle-complete="onToggleComplete"
@@ -92,7 +160,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import axios from 'axios'
 import Sidebar from '@/components/Sidebar.vue'
 import SearchBar from '@/components/SearchBar.vue'
@@ -112,6 +180,65 @@ const viewTab = ref('columns')
 const taskDialog = ref(false)
 const taskInitialForm = ref(null)
 const columns = ref([])
+
+// ── Filters ────────────────────────────────────────────────
+const filterOpen = ref(false)
+const filters = reactive({ catIds: [], tags: [], dateFrom: '', dateTo: '', enterprises: [] })
+
+const allTags = computed(() => {
+  const s = new Set()
+  for (const col of columns.value)
+    for (const t of col.tasks)
+      for (const tag of (t.tags || []))
+        if (tag.label) s.add(tag.label)
+  return [...s]
+})
+
+const allEnterprises = computed(() => {
+  const s = new Set()
+  for (const col of columns.value)
+    for (const t of col.tasks)
+      if (t.enterprise) s.add(t.enterprise)
+  return [...s]
+})
+
+const activeFilterCount = computed(() => {
+  return (filters.catIds.length ? 1 : 0)
+    + (filters.tags.length ? 1 : 0)
+    + (filters.dateFrom ? 1 : 0)
+    + (filters.dateTo ? 1 : 0)
+    + (filters.enterprises.length ? 1 : 0)
+})
+
+const visibleColumns = computed(() =>
+  filters.catIds.length ? columns.value.filter(c => filters.catIds.includes(c.id)) : columns.value
+)
+
+const taskFilter = computed(() => {
+  const hasTag = filters.tags.length > 0
+  const hasFrom = !!filters.dateFrom
+  const hasTo = !!filters.dateTo
+  const hasEnt = filters.enterprises.length > 0
+  if (!hasTag && !hasFrom && !hasTo && !hasEnt) return null
+  return (task) => {
+    if (hasTag) {
+      const labels = (task.tags || []).map(t => t.label)
+      if (!filters.tags.some(f => labels.includes(f))) return false
+    }
+    if (hasFrom && task.deadlineRaw) {
+      if (new Date(task.deadlineRaw) < new Date(filters.dateFrom)) return false
+    }
+    if (hasTo && task.deadlineRaw) {
+      if (new Date(task.deadlineRaw) > new Date(filters.dateTo + 'T23:59:59')) return false
+    }
+    if (hasEnt && !filters.enterprises.includes(task.enterprise)) return false
+    return true
+  }
+})
+
+const resetFilters = () => {
+  filters.catIds = []; filters.tags = []; filters.dateFrom = ''; filters.dateTo = ''; filters.enterprises = []
+}
 
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
@@ -149,6 +276,7 @@ const openDetail = (task, column) => {
     description: task.description || '',
     lists: task.lists || [],
     deadlineRaw: task.deadlineRaw || null,
+    dateFromRaw: task.dateFromRaw || null,
     participants: task.participants || [],
     tags: task.tags || [],
     enterprise: task.enterprise || '',
@@ -171,6 +299,7 @@ const onToggleComplete = async (task, completed) => {
       title:        task.title,
       description:  task.description,
       deadlineRaw:  task.deadlineRaw ? new Date(task.deadlineRaw).toISOString() : null,
+      dateFromRaw:  task.dateFromRaw ? new Date(task.dateFromRaw).toISOString() : null,
       enterprise:   task.enterprise,
       tags:         task.tags,
       lists:        task.lists,
@@ -213,7 +342,8 @@ const onDeleteColumn = async (id) => {
 
 const onTaskSave = async (formData) => {
   const deadlineRaw = formData.deadlineRaw ? new Date(formData.deadlineRaw) : null
-  const targetCol = columns.value.find((c) => c.id === formData.catId) || columns.value[0]
+  const dateFromRaw = formData.dateFromRaw ? new Date(formData.dateFromRaw) : null
+  const targetCol   = columns.value.find((c) => c.id === formData.catId) || columns.value[0]
 
   try {
     if (formData.id) {
@@ -222,6 +352,7 @@ const onTaskSave = async (formData) => {
         title:        formData.title,
         description:  formData.description,
         deadlineRaw:  deadlineRaw ? deadlineRaw.toISOString() : null,
+        dateFromRaw:  dateFromRaw ? dateFromRaw.toISOString() : null,
         enterprise:   formData.enterprise,
         tags:         formData.tags,
         lists:        formData.lists,
@@ -242,6 +373,8 @@ const onTaskSave = async (formData) => {
           lists:        formData.lists,
           deadlineRaw,
           deadline:     deadlineRaw ? fmtShort(deadlineRaw) : orig.deadline,
+          dateFromRaw,
+          dateFrom:     dateFromRaw ? fmtShort(dateFromRaw) : orig.dateFrom,
           tags:         formData.tags,
           enterprise:   formData.enterprise,
           participants: formData.participants,
@@ -262,6 +395,7 @@ const onTaskSave = async (formData) => {
         title:        formData.title,
         description:  formData.description,
         deadlineRaw:  deadlineRaw ? deadlineRaw.toISOString() : null,
+        dateFromRaw:  dateFromRaw ? dateFromRaw.toISOString() : null,
         enterprise:   formData.enterprise,
         tags:         formData.tags,
         lists:        formData.lists,
@@ -307,6 +441,21 @@ const onTaskSave = async (formData) => {
   align-items: flex-start;
   padding-bottom: 16px;
 }
+.filter-bar {
+  border-bottom: 1px solid rgba(0,0,0,0.08);
+  background: #fafafa;
+}
+.filter-sel {
+  min-width: 160px;
+  max-width: 220px;
+}
+.filter-date {
+  max-width: 170px;
+}
+.filter-enter-active,
+.filter-leave-active { transition: opacity 0.15s, transform 0.15s; }
+.filter-enter-from,
+.filter-leave-to { opacity: 0; transform: translateY(-6px); }
 </style>
 
 <style>

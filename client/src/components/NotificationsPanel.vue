@@ -47,9 +47,7 @@
             </div>
 
             <!-- Avatar -->
-            <v-avatar size="36" :color="avatarColor(n.actor_name)" class="flex-shrink-0">
-              <span style="font-size: 12px; font-weight: 700; color: white">{{ initials(n.actor_name) }}</span>
-            </v-avatar>
+            <UserAvatar :user-id="n.actor_id" :name="n.actor_name" :size="36" class="flex-shrink-0" />
 
             <!-- Content -->
             <div class="notif-content">
@@ -106,6 +104,7 @@
 import { ref, watch } from 'vue'
 import axios from 'axios'
 import { useEvents } from '@/composables/useEvents'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, required: true },
@@ -181,20 +180,6 @@ async function remove(n) {
 }
 
 // ── Helpers ──────────────────────────────────────────────
-const AVATAR_COLORS = ['#7B5EA7', '#1565C0', '#E65100', '#2E7D32', '#6A1B9A', '#00695C', '#AD1457', '#0277BD']
-
-function avatarColor(name) {
-  const code = (name || '').charCodeAt(0) || 0
-  return AVATAR_COLORS[code % AVATAR_COLORS.length]
-}
-
-function initials(name) {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase()
-  return parts[0].slice(0, 2).toUpperCase()
-}
-
 function relativeTime(dateStr) {
   if (!dateStr) return ''
   const now  = new Date()

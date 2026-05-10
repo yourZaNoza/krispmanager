@@ -119,9 +119,7 @@
                   class="d-flex align-center px-4 py-3"
                   :style="{ borderTop: i > 0 ? '1px solid rgba(0,0,0,0.07)' : 'none' }"
                 >
-                  <v-avatar size="32" color="grey-lighten-2" style="margin-right: 14px; flex-shrink: 0;">
-                    <span style="font-size: 12px; color: #616161">{{ initials(user.name) }}</span>
-                  </v-avatar>
+                  <UserAvatar :user-id="user.id" :name="user.name" :size="32" style="margin-right: 14px; flex-shrink: 0;" />
                   <div style="flex: 1; min-width: 0;">
                     <p class="text-body-2 font-weight-medium mb-0 text-truncate">{{ user.name }}</p>
                     <p class="text-caption text-grey mb-0 text-truncate">{{ user.email }}</p>
@@ -176,6 +174,7 @@ import Sidebar from '@/components/Sidebar.vue'
 import SearchBar from '@/components/SearchBar.vue'
 import CategoryDialog from '@/components/tasks/CategoryDialog.vue'
 import AdminSection from '@/components/admin/AdminSection.vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const { global: vTheme } = useTheme()
 const isDark = computed(() => vTheme.current.value.dark)

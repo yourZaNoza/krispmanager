@@ -9,13 +9,13 @@
         </v-icon>
         <v-icon :color="col.dotColor" size="10" class="mx-2">mdi-circle</v-icon>
         <span class="cat-title">{{ col.title }}</span>
-        <span class="cat-count ml-2">{{ pluralCount(col.tasks.length) }}</span>
+        <span class="cat-count ml-2">{{ pluralCount(getVisibleTasks(col).length) }}</span>
       </div>
 
       <!-- Task rows -->
       <template v-if="!collapsed[col.id]">
         <div
-          v-for="task in col.tasks"
+          v-for="task in getVisibleTasks(col)"
           :key="task.id"
           class="task-row d-flex align-center"
           :class="{ 'task-row--done': task.completed }"
@@ -56,14 +56,13 @@
               location="top"
             >
               <template #activator="{ props: tp }">
-                <v-avatar
+                <UserAvatar
                   v-bind="tp"
-                  size="24"
-                  color="grey-lighten-2"
+                  :user-id="p.id"
+                  :name="p.name"
+                  :size="24"
                   :style="{ marginLeft: i > 0 ? '-6px' : '0', border: '2px solid white', zIndex: 10 - i }"
-                >
-                  <span style="font-size: 9px; color: #424242">{{ getInitials(p.name) }}</span>
-                </v-avatar>
+                />
               </template>
             </v-tooltip>
           </div>
@@ -126,13 +125,19 @@
 
 <script setup>
 import { ref, reactive } from 'vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 defineOptions({ inheritAttrs: false })
 
 const props = defineProps({
-  columns: { type: Array, required: true },
+  columns:    { type: Array, required: true },
+  taskFilter: { default: null },
 })
 const emit = defineEmits(['task-click', 'toggle-complete', 'delete-task'])
+
+function getVisibleTasks(col) {
+  return props.taskFilter ? col.tasks.filter(props.taskFilter) : col.tasks
+}
 
 // ── Collapse state ──────────────────────────────────────
 const collapsed = reactive({})
@@ -163,12 +168,6 @@ const confirmDelete = () => {
 const pluralCount = (n) =>
   n === 1 ? `${n} объект` : n >= 2 && n <= 4 ? `${n} объекта` : `${n} объектов`
 
-const getInitials = (name) => {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[1][0]).toUpperCase()
-}
 </script>
 
 <style scoped>

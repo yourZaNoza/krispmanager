@@ -13,16 +13,17 @@ class Task {
     const dateVal = data.deadline || new Date().toISOString().split('T')[0]
     const [result] = await db.execute(
       `INSERT INTO tasks
-        (user_id, id_category, date, title, description, deadline, enterprise, tags, lists, participants, attachments, comments, history)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (user_id, id_category, date, title, description, deadline, date_from, enterprise, tags, lists, participants, attachments, comments, history)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         userId,
         categoryId,
         dateVal,
         data.title,
         data.description || null,
-        data.deadline || null,
-        data.enterprise || null,
+        data.deadline    || null,
+        data.date_from   || null,
+        data.enterprise  || null,
         JSON.stringify(data.tags || []),
         JSON.stringify(data.lists || []),
         JSON.stringify(data.participants || []),
@@ -70,6 +71,7 @@ class Task {
         title        = ?,
         description  = ?,
         deadline     = ?,
+        date_from    = ?,
         enterprise   = ?,
         tags         = ?,
         lists        = ?,
@@ -83,8 +85,9 @@ class Task {
         categoryId,
         data.title,
         data.description || null,
-        data.deadline || null,
-        data.enterprise || null,
+        data.deadline    || null,
+        data.date_from   || null,
+        data.enterprise  || null,
         JSON.stringify(data.tags || []),
         JSON.stringify(data.lists || []),
         JSON.stringify(data.participants || []),

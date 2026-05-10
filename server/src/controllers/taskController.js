@@ -25,6 +25,8 @@ function mapTask(t) {
     description:  t.description || '',
     deadline:     fmtDate(t.deadline),
     deadlineRaw:  t.deadline || null,
+    dateFrom:     fmtDate(t.date_from),
+    dateFromRaw:  t.date_from || null,
     tags:         safeJSON(t.tags, []),
     lists:        safeJSON(t.lists, []),
     attachments:  safeJSON(t.attachments, []),
@@ -192,13 +194,14 @@ exports.createTask = async (req, res) => {
     const userId = req.user && req.user.id
     if (!userId) return res.status(401).json({ message: 'Не авторизован' })
 
-    const { catId, title, description, deadlineRaw, enterprise, tags, lists, participants, attachments, comments } = req.body
+    const { catId, title, description, deadlineRaw, dateFromRaw, enterprise, tags, lists, participants, attachments, comments } = req.body
     if (!catId || !title) return res.status(400).json({ message: 'catId и title обязательны' })
 
-    const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString().split('T')[0] : null
+    const deadline  = deadlineRaw  ? new Date(deadlineRaw).toISOString().split('T')[0]  : null
+    const date_from = dateFromRaw  ? new Date(dateFromRaw).toISOString().split('T')[0]  : null
 
     const taskId = await Task.create(userId, catId, {
-      title, description, deadline, enterprise, tags, lists, participants, attachments, comments,
+      title, description, deadline, date_from, enterprise, tags, lists, participants, attachments, comments,
     })
 
     const parts = participants || []
@@ -222,7 +225,9 @@ exports.createTask = async (req, res) => {
       title,
       description:  description || '',
       deadline:     fmtDate(deadline),
-      deadlineRaw:  deadline || null,
+      deadlineRaw:  deadline    || null,
+      dateFrom:     fmtDate(date_from),
+      dateFromRaw:  date_from   || null,
       tags:         tags || [],
       lists:        lists || [],
       attachments:  attachments || [],
@@ -259,16 +264,17 @@ exports.updateTask = async (req, res) => {
     if (!userId) return res.status(401).json({ message: 'Не авторизован' })
 
     const taskId = parseInt(req.params.id, 10)
-    const { catId, title, description, deadlineRaw, enterprise, tags, lists, participants, attachments, comments, history, completed } = req.body
+    const { catId, title, description, deadlineRaw, dateFromRaw, enterprise, tags, lists, participants, attachments, comments, history, completed } = req.body
     if (!catId || !title) return res.status(400).json({ message: 'catId и title обязательны' })
 
-    const deadline = deadlineRaw ? new Date(deadlineRaw).toISOString().split('T')[0] : null
+    const deadline  = deadlineRaw ? new Date(deadlineRaw).toISOString().split('T')[0] : null
+    const date_from = dateFromRaw ? new Date(dateFromRaw).toISOString().split('T')[0] : null
 
     // Snapshot before update for change detection
     const oldTask = await Task.findById(taskId)
 
     await Task.update(taskId, userId, catId, {
-      title, description, deadline, enterprise, tags, lists, participants, attachments, comments, history, completed,
+      title, description, deadline, date_from, enterprise, tags, lists, participants, attachments, comments, history, completed,
     })
 
     try {

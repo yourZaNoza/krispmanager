@@ -52,14 +52,13 @@
           location="top"
         >
           <template #activator="{ props: tp }">
-            <v-avatar
+            <UserAvatar
               v-bind="tp"
-              size="22"
-              color="grey-lighten-2"
+              :user-id="p.id"
+              :name="p.name"
+              :size="22"
               style="margin-left: -4px; border: 2px solid white"
-            >
-              <span style="font-size: 9px; color: #424242">{{ getInitials(p.name) }}</span>
-            </v-avatar>
+            />
           </template>
         </v-tooltip>
       </div>
@@ -69,6 +68,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import UserAvatar from '@/components/UserAvatar.vue'
 
 const props = defineProps({
   task: { type: Object, required: true },
@@ -98,12 +98,6 @@ const subtasksText = computed(() => {
 const attachCount  = computed(() => Array.isArray(props.task.attachments) ? props.task.attachments.length : props.task.attachments)
 const commentCount = computed(() => Array.isArray(props.task.comments)    ? props.task.comments.length    : props.task.comments)
 
-const getInitials = (name) => {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase()
-  return (parts[0][0] + parts[1][0]).toUpperCase()
-}
 </script>
 
 <style scoped>
