@@ -256,9 +256,9 @@ import CategoryDialog from '@/components/tasks/CategoryDialog.vue'
 import AdminSection from '@/components/admin/AdminSection.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 
-const { global: vTheme } = useTheme()
-const isDark = computed(() => vTheme.current.value.dark)
-const toggleTheme = (val) => { vTheme.name.value = val ? 'dark' : 'light'; localStorage.setItem('theme', val ? 'dark' : 'light') }
+const theme = useTheme()
+const isDark = computed(() => theme.global.current.value.dark)
+const toggleTheme = (val) => { theme.change(val ? 'dark' : 'light'); localStorage.setItem('theme', val ? 'dark' : 'light') }
 
 const sidebarOpen = ref(true)
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })

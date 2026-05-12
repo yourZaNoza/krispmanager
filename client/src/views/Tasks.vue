@@ -441,4 +441,12 @@ const onTaskSave = async (formData) => {
 .tab-icon svg path {
   stroke: currentColor !important;
 }
+
+.v-theme--dark .tasks-header {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+}
+.v-theme--dark .filter-bar {
+  background: transparent !important;
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
 </style>

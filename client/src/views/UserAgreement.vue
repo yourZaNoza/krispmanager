@@ -1,7 +1,6 @@
-<!-- src/views/PersonalDataPolicy.vue -->
 <template>
   <v-app>
-    <v-main class="bg-grey-lighten-4">
+    <v-main>
       <div class="policy-wrapper">
         <div class="policy-content">
           <h1 class="text-h4 font-weight-bold mb-8">ПОЛЬЗОВАТЕЛЬСКОЕ СОГЛАШЕНИЕ САЙТА</h1>
@@ -21,7 +20,6 @@
 
           <h2>Основные понятия, используемые в настоящем пользовательском соглашении</h2>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             В настоящем пользовательском соглашении, если из текста настоящего соглашения прямо не
             вытекает иное, следующие слова и выражения будут иметь указанные ниже значения:
@@ -200,7 +198,6 @@
 
           <h2>5. Права и обязанности Администратора</h2>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             5.1. Администратор вправе:
             <ul class="clear-list">
@@ -261,7 +258,6 @@
             </ul>
           </div>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             5.2. Администратор обязан:
             <ul class="clear-list">
@@ -285,7 +281,6 @@
 
           <h2>6. Права и обязанности Пользователя</h2>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             6.1. Пользователь обязуется:
             <ul class="clear-list">
@@ -322,7 +317,6 @@
             </ul>
           </div>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             6.2. Пользователю запрещено:
             <ul class="clear-list">
@@ -418,7 +412,6 @@
             </ul>
           </div>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             6.3. Пользователь имеет право:
             <ul class="clear-list">
@@ -452,7 +445,6 @@
             </ul>
           </div>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             6.4. Пользователь согласен с тем, что, осуществляя доступ к Сайту и пользуясь его
             Сервисом, он:
@@ -536,7 +528,6 @@
             Ниже приводится информация об обработке персональных данных.
           </p>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             8.1. Персональные данные. Цель сбора и обработки персональных данных:
             <ul class="clear-list">
@@ -555,7 +546,6 @@
             </ul>
           </div>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             8.2. Условия обработки персональной информации покупателя и её передачи третьим лицам:
             <ul class="clear-list">
@@ -571,7 +561,6 @@
             </ul>
           </div>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             8.3. Меры, применяемые для защиты персональной информации пользователей:
             <ul class="clear-list">
@@ -594,7 +583,6 @@
             персональных данных третьего лица.
           </p>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             9.3. Перечень персональных данных Пользователя, на обработку которых дается согласие:
             <ul class="clear-list">
@@ -646,7 +634,6 @@
             к Администратора о возмещении убытков (ущерба), возникших, в связи с этим.
           </p>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             9.12. Пользователь дает согласие на:
             <ul class="clear-list">
@@ -713,7 +700,6 @@
             соответствовать ожиданиям Пользователя.
           </p>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             11.4. Администратор прилагает все возможные усилия для обеспечения нормальной
             работоспособности Сайта, однако не несет ответственности за неисполнение или
@@ -809,7 +795,6 @@
             использованием Сервисов.
           </p>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             11.14. Администратор прилагает все возможные усилия для обеспечения нормальной
             работоспособности Сайта, однако не несет ответственности за неисполнение или
@@ -876,7 +861,6 @@
             действующим законодательством РФ.
           </p>
 
-          <!-- Исправлено: p → div для списка -->
           <div class="text-body-1 mb-4">
             13.2. Для разрешения споров, возникших между Пользователем и Администратором в
             результате использования услуг, применяется следующий претензионный порядок:
@@ -968,14 +952,12 @@
 </script>
 
 <style scoped>
-.bg-grey-lighten-4 {
-  background-color: #f5f5f5;
-}
-
 .policy-wrapper {
   padding: 40px 60px;
+  min-height: 100vh;
   display: flex;
   justify-content: center;
+  background-color: #f5f5f5;
 }
 
 .policy-content {
@@ -996,23 +978,35 @@
 
 .clear-list {
   list-style: none;
-  padding-left: 0px;
+  padding-left: 0;
 }
 
-/* Адаптивность */
 @media (max-width: 960px) {
-  .policy-wrapper {
-    padding: 32px 40px;
-  }
+  .policy-wrapper { padding: 32px 40px; }
 }
 
 @media (max-width: 600px) {
-  .policy-wrapper {
-    padding: 24px 20px;
-  }
+  .policy-wrapper { padding: 24px 20px; }
+  h1 { font-size: 1.5rem !important; }
+}
+</style>
 
-  h1 {
-    font-size: 1.5rem !important;
-  }
+<style>
+.v-theme--dark .policy-wrapper {
+  background-color: transparent;
+}
+.v-theme--dark .policy-content h1,
+.v-theme--dark .policy-content h2,
+.v-theme--dark .policy-content h3,
+.v-theme--dark .policy-content h4,
+.v-theme--dark .policy-content h5,
+.v-theme--dark .policy-content h6 {
+  color: rgba(255, 255, 255, 0.9);
+}
+.v-theme--dark .policy-content,
+.v-theme--dark .policy-content p,
+.v-theme--dark .policy-content div,
+.v-theme--dark .policy-content li {
+  color: rgba(255, 255, 255, 0.75);
 }
 </style>

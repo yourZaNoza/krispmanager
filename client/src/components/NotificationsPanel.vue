@@ -335,14 +335,19 @@ defineExpose({ fetchUnreadCount: async () => {
 .notif-slide-enter-from,
 .notif-slide-leave-to { transform: translateX(-16px); opacity: 0; }
 
-/* Dark theme */
-:global(.v-theme--dark) .notif-panel {
+</style>
+
+<style>
+.v-theme--dark .notif-panel {
   background: #1e1e1e;
   border-color: rgba(255,255,255,0.1);
 }
-:global(.v-theme--dark) .notif-item:hover { background: rgba(255,255,255,0.05); }
-:global(.v-theme--dark) .notif-item--unread { background: rgba(3,114,71,0.15); }
-:global(.v-theme--dark) .notif-item--unread:hover { background: rgba(3,114,71,0.22); }
-:global(.v-theme--dark) .notif-text { color: #ffffff; }
-:global(.v-theme--dark) .notif-header { border-color: rgba(255,255,255,0.08); }
+.v-theme--dark .notif-header  { border-color: rgba(255,255,255,0.08); }
+.v-theme--dark .notif-item    { border-bottom-color: rgba(255,255,255,0.06); }
+.v-theme--dark .notif-item:hover          { background: rgba(255,255,255,0.05); }
+.v-theme--dark .notif-item--unread        { background: rgba(3,114,71,0.15); }
+.v-theme--dark .notif-item--unread:hover  { background: rgba(3,114,71,0.22); }
+.v-theme--dark .notif-text { color: #ffffff; }
+.v-theme--dark .notif-task { color: #9e9e9e; }
+.v-theme--dark .notif-time { color: #757575; }
 </style>

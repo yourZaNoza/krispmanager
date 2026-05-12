@@ -101,8 +101,8 @@
 
             <v-btn
               type="submit"
-              color="success"
-              class="text-none help-submit"
+              class="text-none help-submit text-white"
+              style="background-color: #037247"
               :loading="loading"
               size="large"
             >Отправить</v-btn>
@@ -280,13 +280,18 @@ function reset() {
   margin: 0;
 }
 
-/* Dark theme */
-:global(.v-theme--dark) .help-card {
+</style>
+
+<style>
+.v-theme--dark .help-card {
   background: #1e1e1e;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
 }
-:global(.v-theme--dark) .help-title  { color: #ffffff; }
-:global(.v-theme--dark) .help-label  { color: #e0e0e0; }
-:global(.v-theme--dark) .help-success-text { color: #ffffff; }
-:global(.v-theme--dark) .page-header { border-color: rgba(255, 255, 255, 0.08); }
+.v-theme--dark .help-title         { color: #ffffff; }
+.v-theme--dark .help-subtitle      { color: #9e9e9e; }
+.v-theme--dark .help-label         { color: #e0e0e0; }
+.v-theme--dark .help-hint          { color: #757575; }
+.v-theme--dark .help-success-text  { color: #ffffff; }
+.v-theme--dark .help-success-sub   { color: #9e9e9e; }
+.v-theme--dark .page-header        { border-color: rgba(255, 255, 255, 0.08); }
 </style>

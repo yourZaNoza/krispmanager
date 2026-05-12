@@ -228,6 +228,7 @@
                 class="text-none"
                 prepend-icon="mdi-download-outline"
                 style="font-size: 12px"
+                @click="showEntExportDialog = true"
               >Выгрузить отчет</v-btn>
             </div>
 
@@ -360,6 +361,70 @@
             class="text-none"
             :loading="exportLoading"
             @click="generateReport"
+          >Выгрузить</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- ── Enterprise export dialog ── -->
+    <v-dialog v-model="showEntExportDialog" max-width="420" persistent>
+      <v-card rounded="lg">
+        <v-card-title class="pt-5 px-6 pb-0" style="font-size: 16px; font-weight: 600">
+          Выгрузить отчет по предприятиям
+        </v-card-title>
+        <v-card-text class="px-6 pt-5 pb-2" style="display: flex; flex-direction: column; gap: 20px">
+
+          <!-- Формат -->
+          <div>
+            <p class="text-caption text-grey-darken-1 mb-2" style="font-weight: 500; letter-spacing: 0.3px">ФОРМАТ</p>
+            <v-radio-group v-model="entExportFormat" density="compact" hide-details inline style="margin-top: -4px">
+              <v-radio label="PDF" value="pdf" color="#037247" />
+              <v-radio label="Word (DOC)" value="docx" color="#037247" style="margin-left: 12px" />
+            </v-radio-group>
+          </div>
+
+          <!-- Выборка -->
+          <div>
+            <p class="text-caption text-grey-darken-1 mb-2" style="font-weight: 500; letter-spacing: 0.3px">ВЫБОРКА</p>
+            <v-radio-group v-model="entExportFilterType" density="compact" hide-details style="margin-top: -4px; margin-bottom: 14px">
+              <v-radio label="По категории" value="category" color="#037247" />
+              <v-radio label="По наименованию" value="name" color="#037247" style="margin-top: 4px" />
+            </v-radio-group>
+
+            <v-select
+              v-if="entExportFilterType === 'category'"
+              v-model="entExportCatTitle"
+              :items="entCategoryOptions"
+              item-title="title"
+              item-value="value"
+              label="Категория"
+              variant="outlined"
+              density="compact"
+              hide-details
+            />
+            <v-autocomplete
+              v-if="entExportFilterType === 'name'"
+              v-model="entExportEntId"
+              :items="entListSorted"
+              item-title="name"
+              item-value="id"
+              label="Наименование"
+              variant="outlined"
+              density="compact"
+              hide-details
+              no-data-text="Нет предприятий"
+            />
+          </div>
+
+        </v-card-text>
+        <v-card-actions class="px-6 pb-6 pt-2" style="gap: 8px; justify-content: flex-end">
+          <v-btn variant="text" class="text-none" @click="showEntExportDialog = false">Отмена</v-btn>
+          <v-btn
+            color="#037247"
+            variant="flat"
+            class="text-none"
+            :loading="entReportLoading"
+            @click="generateEntReport"
           >Выгрузить</v-btn>
         </v-card-actions>
       </v-card>
@@ -539,6 +604,17 @@ const exportLoading    = ref(false)
 const MONTHS_FULL = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь']
 const MONTH_OPTIONS = MONTHS_FULL.map((title, i) => ({ value: i + 1, title }))
 
+function openBlob(url) {
+  const a = document.createElement('a')
+  a.href = url
+  a.target = '_blank'
+  a.rel = 'noopener'
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  setTimeout(() => URL.revokeObjectURL(url), 10000)
+}
+
 function escHtml(s) {
   return String(s)
     .replace(/&/g, '&amp;').replace(/</g, '&lt;')
@@ -642,11 +718,10 @@ async function generateReport() {
           m.replace('overflow: visible', 'overflow: visible; width: 100%; height: auto'))
       : ''
 
-    const win = window.open('', '_blank', 'width=960,height=720,scrollbars=yes')
-    if (win) {
-      win.document.write(buildReportHtml(reportData, svgString))
-      win.document.close()
-    }
+    const html = buildReportHtml(reportData, svgString)
+    const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+    const url  = URL.createObjectURL(blob)
+    openBlob(url)
     showExportDialog.value = false
   } catch (err) {
     console.error('generateReport error:', err)
@@ -661,6 +736,147 @@ onMounted(() => {
   loadTaskStats()
   loadEnterprises()
 })
+
+// ── Enterprise report ─────────────────────────────────────
+const showEntExportDialog  = ref(false)
+const entReportLoading     = ref(false)
+const entExportFormat      = ref('pdf')
+const entExportFilterType  = ref('category')
+const entExportCatTitle    = ref('all')
+const entExportEntId       = ref(null)
+
+const entCategoryOptions = computed(() => {
+  const titles = [...new Set((entData.value.enterprises || []).map(e => e.catTitle).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'))
+  return [
+    { value: 'all', title: 'Все категории' },
+    ...titles.map(t => ({ value: t, title: t })),
+  ]
+})
+
+const entListSorted = computed(() =>
+  [...(entData.value.enterprises || [])].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'))
+)
+
+function fmtDateRep(d) {
+  if (!d) return null
+  const dt = new Date(d)
+  if (isNaN(dt)) return null
+  return `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.${dt.getFullYear()}`
+}
+
+function buildEntReportHtml(enterprises) {
+  const dateStr = fmtDateRep(new Date())
+
+  const entSections = enterprises.map(ent => {
+    const infoParts = [
+      ent.city           && `Город: ${escHtml(ent.city)}`,
+      ent.address        && `Адрес: ${escHtml(ent.address)}`,
+      ent.phone          && `Тел.: ${escHtml(ent.phone)}`,
+      ent.contact_person && `Контактное лицо: ${escHtml(ent.contact_person)}`,
+    ].filter(Boolean)
+
+    const tasksHtml = ent.tasks.length
+      ? ent.tasks.map(t => {
+          const from  = fmtDateRep(t.date_from)
+          const to    = fmtDateRep(t.deadline)
+          const dates = [from, to].filter(Boolean).join(' — ')
+
+          const listsHtml = Array.isArray(t.lists) && t.lists.length
+            ? t.lists.map(lst => {
+                const items = Array.isArray(lst.items)
+                  ? lst.items.map(i => `<span style="margin-right:10px">${i.done ? '&#9989;' : '&#9723;'} ${escHtml(i.text)}</span>`).join('')
+                  : ''
+                return `<div style="margin-top:4px;font-size:11px"><strong>${escHtml(lst.name || 'Список')}:</strong> ${items || '—'}</div>`
+              }).join('')
+            : ''
+
+          const parts = Array.isArray(t.participants) && t.participants.length
+            ? t.participants.map(p => escHtml(p.name || `#${p.id}`)).join(', ')
+            : '—'
+
+          return `<div style="margin-bottom:14px;padding:12px 14px;border:1px solid #e5e7eb;border-radius:6px;page-break-inside:avoid">
+            <div style="font-weight:600;font-size:13px;margin-bottom:5px">${escHtml(t.title)}</div>
+            ${dates ? `<div style="font-size:11px;color:#616161;margin-bottom:4px">Сроки: ${dates}</div>` : ''}
+            ${t.description ? `<div style="font-size:12px;color:#424242;margin-bottom:5px;white-space:pre-wrap">${escHtml(t.description)}</div>` : ''}
+            ${listsHtml ? `<div style="margin-bottom:5px">${listsHtml}</div>` : ''}
+            <div style="font-size:11px;color:#757575;margin-bottom:3px">Комментарии: ${t.commentCount} &nbsp;&nbsp; Файлы: ${t.fileCount}</div>
+            <div style="font-size:11px;color:#757575">Участники: ${parts}</div>
+          </div>`
+        }).join('')
+      : `<p style="color:#9e9e9e;font-size:12px;font-style:italic;margin:0">Нет прикреплённых задач</p>`
+
+    return `<div style="margin-bottom:36px;page-break-inside:avoid">
+      <div style="border-left:4px solid #037247;padding-left:12px;margin-bottom:8px">
+        <div style="font-size:16px;font-weight:700;color:#1a1a1a">${escHtml(ent.name)}</div>
+        ${ent.catTitle ? `<div style="font-size:11px;color:#037247;font-weight:600;text-transform:uppercase;letter-spacing:0.4px;margin-top:2px">${escHtml(ent.catTitle)}</div>` : ''}
+      </div>
+      ${infoParts.length ? `<div style="font-size:11px;color:#616161;margin-bottom:10px;line-height:1.8">${infoParts.join(' &nbsp;·&nbsp; ')}</div>` : ''}
+      <div style="font-size:12px;font-weight:600;color:#424242;margin-bottom:8px">Задачи (${ent.tasks.length}):</div>
+      ${tasksHtml}
+    </div>`
+  }).join('<hr style="border:none;border-top:1px solid #e5e7eb;margin:0 0 32px">')
+
+  return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Отчет по предприятиям</title>
+<style>
+  @page{size:A4;margin:15mm 15mm 20mm}
+  *{box-sizing:border-box}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#1a1a1a;margin:0}
+  .toolbar{display:flex;justify-content:flex-end;gap:8px;padding:10px 20px;background:#f5f5f5;border-bottom:1px solid #e0e0e0;position:sticky;top:0;z-index:99}
+  .btn-p{background:#037247;color:#fff;border:none;padding:7px 18px;border-radius:6px;font-size:13px;cursor:pointer;font-family:Arial}
+  .btn-c{background:#fff;color:#424242;border:1px solid #d1d5db;padding:7px 18px;border-radius:6px;font-size:13px;cursor:pointer;font-family:Arial}
+  .wrap{padding:24px 32px;max-width:900px;margin:0 auto}
+  @media print{.toolbar{display:none!important}.wrap{padding:0;max-width:100%}}
+</style></head><body>
+<div class="toolbar">
+  <button class="btn-c" onclick="window.close()">Закрыть</button>
+  <button class="btn-p" onclick="window.print()">Сохранить как PDF</button>
+</div>
+<div class="wrap">
+  <h1 style="font-size:20px;font-weight:700;margin:0 0 4px">Отчет по предприятиям</h1>
+  <p style="color:#757575;font-size:12px;margin:0 0 28px">Дата составления: ${dateStr}</p>
+  ${enterprises.length
+    ? entSections
+    : '<p style="color:#9e9e9e;text-align:center;padding:32px 0">Нет предприятий</p>'}
+</div>
+</body></html>`
+}
+
+async function generateEntReport() {
+  if (entExportFilterType.value === 'name' && !entExportEntId.value) return
+  entReportLoading.value = true
+  try {
+    const params = {}
+    if (entExportFilterType.value === 'category') {
+      if (entExportCatTitle.value !== 'all') params.categoryTitle = entExportCatTitle.value
+    } else {
+      params.enterpriseId = entExportEntId.value
+    }
+
+    const { data: enterprises } = await api.get('/api/enterprises/report', { params })
+    const html = buildEntReportHtml(enterprises)
+
+    if (entExportFormat.value === 'pdf') {
+      const blob = new Blob([html], { type: 'text/html; charset=utf-8' })
+      openBlob(URL.createObjectURL(blob))
+    } else {
+      const blob = new Blob(['﻿', html], { type: 'application/msword' })
+      const url  = URL.createObjectURL(blob)
+      const a    = document.createElement('a')
+      a.href     = url
+      a.download = `Отчет_предприятия_${new Date().toISOString().split('T')[0]}.doc`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      setTimeout(() => URL.revokeObjectURL(url), 5000)
+    }
+
+    showEntExportDialog.value = false
+  } catch (err) {
+    console.error('generateEntReport error:', err)
+  } finally {
+    entReportLoading.value = false
+  }
+}
 
 // ── Helpers ──────────────────────────────────────────────────
 const SHORT_MONTHS = ['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек']

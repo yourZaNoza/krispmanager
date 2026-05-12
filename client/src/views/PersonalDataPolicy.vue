@@ -1,8 +1,6 @@
-<!-- src/views/PersonalDataPolicy.vue -->
 <template>
   <v-app>
-    <v-main class="bg-grey-lighten-4">
-      <!-- Добавлена обёртка -->
+    <v-main>
       <div class="policy-wrapper">
         <div class="policy-content">
           <h1 class="text-h4 font-weight-bold mb-8">Политика обработки персональных данных</h1>
@@ -57,24 +55,19 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import Sidebar from '@/components/Sidebar.vue'
-const sidebarOpen = ref(true)
 </script>
 
 <style scoped>
-.bg-grey-lighten-4 {
+.policy-wrapper {
+  padding: 40px 60px;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
   background-color: #f5f5f5;
 }
 
-.policy-wrapper {
-  padding: 40px 60px; /* Боковые отступы */
-  display: flex;
-  justify-content: center;
-}
-
 .policy-content {
-  width: 1000px; /* Ширина контента */
+  width: 1000px;
 }
 
 .policy-content p {
@@ -88,25 +81,31 @@ const sidebarOpen = ref(true)
   text-align: left;
 }
 
-/* Убираем лишние <br> */
 br {
   display: none;
 }
 
-/* Адаптивность */
 @media (max-width: 960px) {
-  .policy-wrapper {
-    padding: 32px 40px;
-  }
+  .policy-wrapper { padding: 32px 40px; }
 }
 
 @media (max-width: 600px) {
-  .policy-wrapper {
-    padding: 24px 20px;
-  }
+  .policy-wrapper { padding: 24px 20px; }
+  h1 { font-size: 1.5rem !important; }
+}
+</style>
 
-  h1 {
-    font-size: 1.5rem !important;
-  }
+<style>
+.v-theme--dark .policy-wrapper {
+  background-color: transparent;
+}
+.v-theme--dark .policy-content h1,
+.v-theme--dark .policy-content h2,
+.v-theme--dark .policy-content h3 {
+  color: rgba(255, 255, 255, 0.9);
+}
+.v-theme--dark .policy-content,
+.v-theme--dark .policy-content p {
+  color: rgba(255, 255, 255, 0.75);
 }
 </style>

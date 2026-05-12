@@ -306,7 +306,7 @@ const mainNavItems = [
   transition: background 0.15s;
 }
 :deep(.user-item:hover) {
-  background: #f5f5f5;
+  background: rgba(0, 0, 0, 0.04);
 }
 :deep(.user-item.v-list-item--active) {
   background: transparent !important;
@@ -324,9 +324,10 @@ const mainNavItems = [
   text-decoration: underline;
 }
 .footer-copy {
-  font-size: 8px;
+  font-size: 12px;
   color: #bdbdbd;
   line-height: 1.6;
+  padding-left: 3px;
 }
 </style>
 
@@ -348,5 +349,8 @@ const mainNavItems = [
 }
 .v-theme--dark .nav-list-item.v-list-item--active > .v-list-item__overlay {
   opacity: 0 !important;
+}
+.v-theme--dark .user-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 </style>

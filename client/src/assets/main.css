@@ -1,5 +1,26 @@
 @import './base.css';
 
+/* Navigation drawer scrim */
+.v-navigation-drawer__scrim {
+  display: none !important;
+}
+
+/* Overlay container — always transparent; .v-overlay__scrim handles dialog dimming */
+.v-overlay {
+  background: transparent !important;
+}
+
+/* Icons — never inherit dark backgrounds from parent theme context */
+.v-icon {
+  background-color: transparent !important;
+}
+
+/* Sidebar toggle button — dark green in dark theme */
+.v-theme--dark .toggle-btn {
+  color: #037247 !important;
+  border-color: #037247 !important;
+}
+
 /* Filter bar: 8px inner padding on all pages */
 .filter-bar .v-field-label:not(.v-field-label--floating) {
   transform: translateX(8px) translateY(-50%) !important;

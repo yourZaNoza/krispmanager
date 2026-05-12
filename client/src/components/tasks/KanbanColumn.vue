@@ -244,3 +244,16 @@ const taskCountLabel = computed(() => {
   opacity: 1;
 }
 </style>
+
+<style>
+.v-theme--dark .kanban-column-body {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+.v-theme--dark .column-title:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.v-theme--dark .task-badge {
+  background: rgba(255, 255, 255, 0.08);
+  color: #bdbdbd;
+}
+</style>

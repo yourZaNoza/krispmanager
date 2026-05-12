@@ -235,14 +235,15 @@ onUnmounted(() => {
   white-space: nowrap;
 }
 
-/* Dark theme */
-:global(.v-theme--dark) .search-dropdown {
-  background: #2a2a2a;
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+/* Dropdown always light — regardless of app theme */
+.search-dropdown {
+  background: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12) !important;
 }
-:global(.v-theme--dark) .search-item:hover,
-:global(.v-theme--dark) .search-item--active { background: rgba(255, 255, 255, 0.07); }
-:global(.v-theme--dark) .search-item { border-color: rgba(255, 255, 255, 0.05); }
-:global(.v-theme--dark) .search-item-label { color: #e0e0e0; }
+.search-item { border-color: rgba(0, 0, 0, 0.05) !important; }
+.search-item:hover,
+.search-item--active { background: #f5f5f5 !important; }
+.search-item-label { color: #1a1a1a !important; }
+.search-state--empty { color: #9e9e9e !important; }
 </style>

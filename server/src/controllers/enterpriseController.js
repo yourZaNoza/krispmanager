@@ -1,3 +1,4 @@
+const db             = require('../config/db')
 const EnterpriseCategory = require('../models/enterpriseCategoryModel')
 const Enterprise = require('../models/enterpriseModel')
 const Employee   = require('../models/employeeModel')
@@ -146,6 +147,100 @@ exports.deleteEnterprise = async (req, res) => {
     res.json({ message: 'Предприятие удалено' })
   } catch (err) {
     console.error('deleteEnterprise error:', err)
+    res.status(500).json({ message: 'Ошибка сервера', error: err.message })
+  }
+}
+
+// GET /api/enterprises/report?categoryId=<id|all>&enterpriseId=<id>
+exports.getEnterpriseReport = async (req, res) => {
+  const userId = req.user && req.user.id
+  if (!userId) return res.status(401).json({ message: 'Не авторизован' })
+
+  const { categoryId, categoryTitle, enterpriseId } = req.query
+
+  try {
+    let enterprises = []
+
+    if (enterpriseId) {
+      const [rows] = await db.execute(
+        `SELECT e.*, ec.title AS cat_title
+         FROM enterprises e
+         LEFT JOIN enterprise_categories ec ON e.category_id = ec.id
+         WHERE e.id = ?`,
+        [parseInt(enterpriseId)]
+      )
+      enterprises = rows
+    } else if (categoryId && categoryId !== 'all') {
+      const [rows] = await db.execute(
+        `SELECT e.*, ec.title AS cat_title
+         FROM enterprises e
+         LEFT JOIN enterprise_categories ec ON e.category_id = ec.id
+         WHERE e.category_id = ?`,
+        [parseInt(categoryId)]
+      )
+      enterprises = rows
+    } else if (categoryTitle && categoryTitle !== 'all') {
+      const [rows] = await db.execute(
+        `SELECT e.*, ec.title AS cat_title
+         FROM enterprises e
+         LEFT JOIN enterprise_categories ec ON e.category_id = ec.id
+         WHERE ec.title = ?`,
+        [categoryTitle]
+      )
+      enterprises = rows
+    } else {
+      const [rows] = await db.execute(
+        `SELECT e.*, ec.title AS cat_title
+         FROM enterprises e
+         LEFT JOIN enterprise_categories ec ON e.category_id = ec.id`
+      )
+      enterprises = rows
+    }
+
+    enterprises.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ru'))
+
+    const result = []
+    for (const ent of enterprises) {
+      const [tasks] = await db.execute(
+        `SELECT id, title, description, deadline, date_from, lists, participants, comments, attachments
+         FROM tasks
+         WHERE enterprise = ? AND deleted_at IS NULL
+         ORDER BY title ASC`,
+        [ent.name]
+      )
+
+      result.push({
+        id:             ent.id,
+        name:           ent.name || '',
+        city:           ent.city || '',
+        address:        ent.address || '',
+        phone:          ent.phone || '',
+        contact_person: ent.contact_person || '',
+        catTitle:       ent.cat_title || '',
+        tasks: tasks.map(t => {
+          let lists = [], participants = [], comments = [], attachments = []
+          try { lists        = JSON.parse(t.lists        || '[]') } catch {}
+          try { participants = JSON.parse(t.participants || '[]') } catch {}
+          try { comments     = JSON.parse(t.comments     || '[]') } catch {}
+          try { attachments  = JSON.parse(t.attachments  || '[]') } catch {}
+          return {
+            id:           t.id,
+            title:        t.title || '',
+            description:  t.description || '',
+            deadline:     t.deadline  ? new Date(t.deadline).toISOString()  : null,
+            date_from:    t.date_from ? new Date(t.date_from).toISOString() : null,
+            lists,
+            participants,
+            commentCount: Array.isArray(comments)    ? comments.length    : 0,
+            fileCount:    Array.isArray(attachments)  ? attachments.length : 0,
+          }
+        }),
+      })
+    }
+
+    res.json(result)
+  } catch (err) {
+    console.error('getEnterpriseReport error:', err)
     res.status(500).json({ message: 'Ошибка сервера', error: err.message })
   }
 }

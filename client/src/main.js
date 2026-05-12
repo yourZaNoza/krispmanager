@@ -15,13 +15,38 @@ const vuetify = createVuetify({
   components,
   directives,
   theme: {
-    defaultTheme: localStorage.getItem('theme') || 'light',
+    defaultTheme: 'light',
+    themes: {
+      light: {
+        colors: {
+          primary:    '#2e7d32',
+          secondary:  '#66bb6a',
+          success:    '#43a047',
+          background: '#ffffff',
+          surface:    '#ffffff',
+        },
+      },
+      dark: {
+        dark: true,
+        colors: {
+          primary:    '#66bb6a',
+          secondary:  '#2e7d32',
+          success:    '#66bb6a',
+          background: '#121212',
+          surface:    '#1e1e1e',
+        },
+      },
+    },
   },
 })
 
-const app = createApp(App)
+// Применяем сохранённую тему ДО монтирования — компоненты сразу видят нужную тему
+const saved = localStorage.getItem('theme')
+if (saved === 'dark') {
+  vuetify.theme.global.name.value = 'dark'
+}
 
+const app = createApp(App)
 app.use(router)
 app.use(vuetify)
-app.use(router)
 app.mount('#app')
