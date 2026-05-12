@@ -30,6 +30,16 @@ class Contact {
       [id, userId]
     )
   }
+
+  static async findAllSystem() {
+    const [rows] = await db.execute(
+      `SELECT c.*, cc.title AS cat_title
+       FROM contacts c
+       LEFT JOIN contact_categories cc ON c.category_id = cc.id
+       ORDER BY c.id ASC`
+    )
+    return rows
+  }
 }
 
 module.exports = Contact

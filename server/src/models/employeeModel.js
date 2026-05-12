@@ -22,7 +22,7 @@ class Employee {
   static async updateProfile(id, { name, email, position, role }) {
     await db.execute(
       "UPDATE employees SET name = ?, email = ?, position = ?, role = ? WHERE id = ?",
-      [name, email, position || '', role || 'сотрудник', id],
+      [name, email, position || '', role ?? null, id],
     );
   }
 
@@ -42,6 +42,10 @@ class Employee {
 
   static async updateAvatar(id, avatarUrl) {
     await db.execute('UPDATE employees SET avatar = ? WHERE id = ?', [avatarUrl, id])
+  }
+
+  static async delete(id) {
+    await db.execute('DELETE FROM employees WHERE id = ?', [id])
   }
 
   static async findRegisteredEmails(emails) {

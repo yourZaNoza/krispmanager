@@ -12,12 +12,18 @@ import Analytics from '../views/Analytics.vue'
 import Settings from '../views/Settings.vue'
 import Archive from '../views/Archive.vue'
 import Help from '../views/Help.vue'
+import NoRole from '../views/NoRole.vue'
 
 const routes = [
   {
     path: '/',
     name: 'Entry',
     component: Entry,
+  },
+  {
+    path: '/no-role',
+    name: 'NoRole',
+    component: NoRole,
   },
   {
     path: '/tasks',
@@ -84,6 +90,40 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+})
+
+const ALLOWED_WITHOUT_ROLE = new Set([
+  '/',
+  '/no-role',
+  '/search',
+  '/profile',
+  '/help',
+  '/user-agreement',
+  '/personal-data-policy',
+])
+
+function getStoredUser() {
+  try {
+    return JSON.parse(localStorage.getItem('user') || '{}')
+  } catch {
+    return {}
+  }
+}
+
+router.beforeEach((to, _from, next) => {
+  const user = getStoredUser()
+
+  if (user?.id && !user.role) {
+    // Пользователь без роли — разрешаем только разрешённые маршруты
+    if (!ALLOWED_WITHOUT_ROLE.has(to.path)) {
+      return next('/no-role')
+    }
+  } else if (user?.id && user.role && to.path === '/no-role') {
+    // Пользователь с ролью не должен оставаться на /no-role
+    return next('/tasks')
+  }
+
+  next()
 })
 
 export default router

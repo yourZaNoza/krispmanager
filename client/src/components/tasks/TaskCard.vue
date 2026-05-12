@@ -3,6 +3,7 @@
     variant="outlined"
     rounded="lg"
     class="task-card pa-3"
+    :class="{ 'task-card--deleted': deleted }"
     style="cursor: pointer"
     @click="$emit('click')"
   >
@@ -17,12 +18,23 @@
           :style="{ backgroundColor: tag.bg, color: tag.color, fontWeight: '500' }"
         >{{ tag.label }}</v-chip>
       </div>
-      <v-btn icon size="x-small" variant="plain" density="compact" @click.stop="$emit('delete-click')">
-        <v-icon size="16" color="grey">mdi-delete-outline</v-icon>
-      </v-btn>
+      <div class="d-flex align-center" style="gap: 6px">
+        <span v-if="deleted" class="deleted-badge">удалена</span>
+        <v-btn
+          v-if="deleted"
+          icon size="x-small" variant="plain" density="compact"
+          title="Восстановить задачу"
+          @click.stop="$emit('restore-click')"
+        >
+          <v-icon size="16" color="#037247">mdi-restore</v-icon>
+        </v-btn>
+        <v-btn v-else icon size="x-small" variant="plain" density="compact" @click.stop="$emit('delete-click')">
+          <v-icon size="16" color="grey">mdi-delete-outline</v-icon>
+        </v-btn>
+      </div>
     </div>
 
-    <p class="text-body-2 font-weight-medium mb-3" style="line-height: 1.4">{{ task.title }}</p>
+    <p class="text-body-2 font-weight-medium mb-3" :class="{ 'text-grey': deleted }" style="line-height: 1.4">{{ task.title }}</p>
 
     <div class="d-flex align-center text-caption text-grey-darken-1 mb-1" style="gap: 14px; flex-wrap: nowrap">
       <span class="d-flex align-center" style="gap: 4px; white-space: nowrap; flex-shrink: 0">
@@ -71,9 +83,10 @@ import { computed } from 'vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 
 const props = defineProps({
-  task: { type: Object, required: true },
+  task:    { type: Object,  required: true },
+  deleted: { type: Boolean, default: false },
 })
-defineEmits(['click', 'delete-click'])
+defineEmits(['click', 'delete-click', 'restore-click'])
 
 const toDate = (d) => { if (!d) return null; return d instanceof Date ? d : new Date(d) }
 const fmtShort = (d) => {
@@ -108,5 +121,17 @@ const commentCount = computed(() => Array.isArray(props.task.comments)    ? prop
 .task-card:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
 }
-
+.task-card--deleted {
+  opacity: 0.75;
+}
+.deleted-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #D32F2F;
+  border: 1px solid #D32F2F;
+  border-radius: 4px;
+  padding: 1px 7px;
+  white-space: nowrap;
+  line-height: 18px;
+}
 </style>

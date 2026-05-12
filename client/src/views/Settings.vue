@@ -53,7 +53,7 @@
             :items="taskCats"
             @add="openDialog('taskCat')"
             @edit="openEdit('taskCat', $event)"
-            @delete="deleteItem('taskCat', $event)"
+            @delete="askDelete('taskCat', $event)"
           />
 
           <!-- 2. Категории контактов -->
@@ -64,7 +64,7 @@
             :items="contactCats"
             @add="openDialog('contactCat')"
             @edit="openEdit('contactCat', $event)"
-            @delete="deleteItem('contactCat', $event)"
+            @delete="askDelete('contactCat', $event)"
           />
 
           <!-- 3. Категории предприятий -->
@@ -75,7 +75,7 @@
             :items="entCats"
             @add="openDialog('entCat')"
             @edit="openEdit('entCat', $event)"
-            @delete="deleteItem('entCat', $event)"
+            @delete="askDelete('entCat', $event)"
           />
 
           <!-- 4. Отметки для задач -->
@@ -87,7 +87,7 @@
             :is-tag="true"
             @add="openDialog('taskTag')"
             @edit="openEdit('taskTag', $event)"
-            @delete="deleteItem('taskTag', $event)"
+            @delete="askDelete('taskTag', $event)"
           />
 
           <!-- 5. Отметки для заметок -->
@@ -99,10 +99,32 @@
             :is-tag="true"
             @add="openDialog('noteTag')"
             @edit="openEdit('noteTag', $event)"
-            @delete="deleteItem('noteTag', $event)"
+            @delete="askDelete('noteTag', $event)"
           />
 
-          <!-- 6. Пользователи -->
+          <!-- 6. Правила для аналитики -->
+          <div class="mb-8">
+            <div class="section-header mb-2">
+              <p class="text-body-1 font-weight-bold mb-0">Правила для аналитики</p>
+              <p class="text-caption text-grey mb-0">Настройка правил подсчёта и отображения аналитических данных.</p>
+            </div>
+            <v-card variant="outlined" rounded="lg">
+              <div class="text-center py-8 text-grey text-body-2">Раздел в разработке</div>
+            </v-card>
+          </div>
+
+          <!-- 7. Правила выгрузки отчётов -->
+          <div class="mb-8">
+            <div class="section-header mb-2">
+              <p class="text-body-1 font-weight-bold mb-0">Правила выгрузки отчётов</p>
+              <p class="text-caption text-grey mb-0">Настройка шаблонов и параметров экспорта отчётов.</p>
+            </div>
+            <v-card variant="outlined" rounded="lg">
+              <div class="text-center py-8 text-grey text-body-2">Раздел в разработке</div>
+            </v-card>
+          </div>
+
+          <!-- 8. Пользователи -->
           <div class="mb-8">
             <div class="section-header mb-2">
               <p class="text-body-1 font-weight-bold mb-0">Пользователи</p>
@@ -124,19 +146,41 @@
                     <p class="text-body-2 font-weight-medium mb-0 text-truncate">{{ user.name }}</p>
                     <p class="text-caption text-grey mb-0 text-truncate">{{ user.email }}</p>
                   </div>
-                  <v-select
-                    :model-value="user.role"
-                    :items="ROLES"
-                    variant="outlined"
-                    density="compact"
-                    hide-details
-                    style="max-width: 160px;"
-                    class="ml-3"
-                    @update:model-value="updateRole(user, $event)"
-                  />
+                  <div class="d-flex align-center" style="gap: 8px; margin-left: 12px; flex-shrink: 0;">
+                    <v-select
+                      :model-value="pendingRoleOf(user)"
+                      :items="ROLE_OPTIONS"
+                      item-title="title"
+                      item-value="value"
+                      variant="outlined"
+                      density="compact"
+                      hide-details
+                      style="width: 170px;"
+                      @update:model-value="setPendingRole(user, $event)"
+                    />
+                    <v-btn
+                      icon size="x-small" variant="plain" density="compact"
+                      title="Удалить пользователя"
+                      @click.stop="askDeleteUser(user)"
+                    >
+                      <v-icon size="16" color="grey">mdi-delete-outline</v-icon>
+                    </v-btn>
+                  </div>
                 </div>
               </template>
             </v-card>
+            <div class="d-flex justify-end mt-3">
+              <v-btn
+                color="success"
+                variant="flat"
+                class="text-none"
+                :loading="savingRoles"
+                :disabled="!hasPendingRoles"
+                @click="saveRoles"
+              >
+                Сохранить роли
+              </v-btn>
+            </div>
           </div>
 
         </template>
@@ -163,6 +207,42 @@
     <v-snackbar v-model="snack.show" :color="snack.color" timeout="2500" location="bottom right">
       {{ snack.text }}
     </v-snackbar>
+
+    <!-- Delete item confirmation -->
+    <v-dialog v-model="deleteItemDialog" max-width="420">
+      <v-card rounded="lg" class="pa-6">
+        <p class="text-body-1 font-weight-medium mb-6 text-center">
+          Вы уверены, что хотите удалить
+          <span class="font-weight-bold">«{{ pendingDelete?.item?.title ?? pendingDelete?.item?.label }}»?</span>
+        </p>
+        <div class="d-flex justify-center" style="gap: 12px">
+          <v-btn variant="outlined" color="grey-darken-1" class="text-none" @click="deleteItemDialog = false">
+            Отмена
+          </v-btn>
+          <v-btn variant="flat" color="red" class="text-none text-white" :loading="deleteLoading" @click="confirmDeleteItem">
+            Удалить
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
+
+    <!-- Delete user confirmation -->
+    <v-dialog v-model="deleteUserDialog" max-width="420">
+      <v-card rounded="lg" class="pa-6">
+        <p class="text-body-1 font-weight-medium mb-6 text-center">
+          Вы уверены, что хотите удалить пользователя
+          <span class="font-weight-bold">{{ pendingDeleteUser?.name }}?</span>
+        </p>
+        <div class="d-flex justify-center" style="gap: 12px">
+          <v-btn variant="outlined" color="grey-darken-1" class="text-none" @click="deleteUserDialog = false">
+            Отмена
+          </v-btn>
+          <v-btn variant="flat" color="red" class="text-none text-white" :loading="deleteLoading" @click="confirmDeleteUser">
+            Удалить
+          </v-btn>
+        </div>
+      </v-card>
+    </v-dialog>
   </v-app>
 </template>
 
@@ -187,23 +267,73 @@ const isAdmin = computed(() => {
   try { return JSON.parse(localStorage.getItem('user') || '{}').role === 'администратор' } catch { return false }
 })
 
-const ROLES = ['сотрудник', 'менеджер', 'администратор']
+const ROLE_OPTIONS = [
+  { title: 'нет роли',       value: null            },
+  { title: 'сотрудник',      value: 'сотрудник'     },
+  { title: 'менеджер',       value: 'менеджер'       },
+  { title: 'администратор',  value: 'администратор'  },
+]
 
-const taskCats   = ref([])
+const taskCats    = ref([])
 const contactCats = ref([])
-const entCats    = ref([])
-const taskTags   = ref([])
-const noteTags   = ref([])
-const users      = ref([])
+const entCats     = ref([])
+const taskTags    = ref([])
+const noteTags    = ref([])
+const users       = ref([])
 
-const loading = ref({ taskCats: false, contactCats: false, entCats: false, taskTags: false, noteTags: false, users: false })
-const snack   = ref({ show: false, text: '', color: 'success' })
+const loading     = ref({ taskCats: false, contactCats: false, entCats: false, taskTags: false, noteTags: false, users: false })
+const snack       = ref({ show: false, text: '', color: 'success' })
+const dialog      = ref({ open: false, type: '', title: '', hasBg: false, item: null })
 
-const dialog = ref({ open: false, type: '', title: '', hasBg: false, item: null })
+// Pending role changes: { userId: newRole }
+const pendingRoles  = ref({})
+const savingRoles   = ref(false)
+const hasPendingRoles = computed(() => Object.keys(pendingRoles.value).length > 0)
+
+// Delete confirmations
+const deleteItemDialog   = ref(false)
+const deleteUserDialog   = ref(false)
+const pendingDelete      = ref(null)   // { type, item }
+const pendingDeleteUser  = ref(null)
+const deleteLoading      = ref(false)
 
 const showSnack = (text, color = 'success') => { snack.value = { show: true, text, color } }
 
-const initials = (name) => (name || '').trim().split(' ').map(p => p[0]).join('').toUpperCase().slice(0, 2) || '?'
+function pendingRoleOf(user) {
+  return pendingRoles.value[user.id] !== undefined ? pendingRoles.value[user.id] : (user.role ?? null)
+}
+
+function setPendingRole(user, value) {
+  if (value === (user.role ?? null)) {
+    // Вернули к исходному — убираем из pending
+    const p = { ...pendingRoles.value }
+    delete p[user.id]
+    pendingRoles.value = p
+  } else {
+    pendingRoles.value = { ...pendingRoles.value, [user.id]: value }
+  }
+}
+
+async function saveRoles() {
+  savingRoles.value = true
+  try {
+    await Promise.all(
+      Object.entries(pendingRoles.value).map(([userId, role]) =>
+        api.put(`/api/auth/users/${userId}/role`, { role })
+      )
+    )
+    Object.entries(pendingRoles.value).forEach(([userId, role]) => {
+      const u = users.value.find(x => x.id === Number(userId))
+      if (u) u.role = role
+    })
+    pendingRoles.value = {}
+    showSnack('Роли сохранены')
+  } catch (err) {
+    showSnack(err.response?.data?.message || 'Ошибка сохранения ролей', 'error')
+  } finally {
+    savingRoles.value = false
+  }
+}
 
 onMounted(async () => {
   if (!isAdmin.value) return
@@ -331,7 +461,15 @@ async function onDialogSave({ name, color, bg }) {
   }
 }
 
-async function deleteItem(type, item) {
+function askDelete(type, item) {
+  pendingDelete.value    = { type, item }
+  deleteItemDialog.value = true
+}
+
+async function confirmDeleteItem() {
+  if (!pendingDelete.value) return
+  const { type, item } = pendingDelete.value
+  deleteLoading.value = true
   try {
     if (type === 'taskCat') {
       await api.delete(`/api/tasks/categories/${item.id}`)
@@ -350,20 +488,36 @@ async function deleteItem(type, item) {
       noteTags.value = noteTags.value.filter(t => t.id !== item.id)
     }
     showSnack('Удалено')
+    deleteItemDialog.value = false
+    pendingDelete.value = null
   } catch (err) {
     showSnack(err.response?.data?.message || 'Ошибка удаления', 'error')
+  } finally {
+    deleteLoading.value = false
   }
 }
 
-async function updateRole(user, role) {
+function askDeleteUser(user) {
+  pendingDeleteUser.value = user
+  deleteUserDialog.value  = true
+}
+
+async function confirmDeleteUser() {
+  if (!pendingDeleteUser.value) return
+  deleteLoading.value = true
   try {
-    await api.put(`/api/auth/users/${user.id}/role`, { role })
-    user.role = role
-    showSnack(`Роль ${user.name} обновлена`)
+    await api.delete(`/api/auth/users/${pendingDeleteUser.value.id}`)
+    users.value = users.value.filter(u => u.id !== pendingDeleteUser.value.id)
+    showSnack('Пользователь удалён')
+    deleteUserDialog.value  = false
+    pendingDeleteUser.value = null
   } catch (err) {
-    showSnack(err.response?.data?.message || 'Ошибка', 'error')
+    showSnack(err.response?.data?.message || 'Ошибка удаления', 'error')
+  } finally {
+    deleteLoading.value = false
   }
 }
+
 </script>
 
 <style scoped>

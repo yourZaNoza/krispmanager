@@ -61,8 +61,24 @@
         density="compact"
         hide-details
         placeholder="8 ___ ___ __ __"
-        class="mb-6"
+        class="mb-4"
         @update:model-value="form.phone = formatPhone($event)"
+      />
+
+      <p class="field-label">Контактное лицо</p>
+      <v-autocomplete
+        v-model="form.contact_id"
+        :items="representatives"
+        item-value="id"
+        item-title="name"
+        variant="outlined"
+        density="compact"
+        hide-details
+        clearable
+        placeholder="Выбрать из представителей"
+        no-data-text="Нет контактов в категории «Представители»"
+        class="mb-6"
+        @update:model-value="onContactSelect"
       />
 
       <div class="d-flex justify-end" style="gap: 12px">
@@ -83,7 +99,8 @@
 </template>
 
 <script setup>
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
+import axios from 'axios'
 import { formatPhone } from '@/composables/phoneFormat'
 
 const props = defineProps({
@@ -93,24 +110,41 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'save'])
 
-const nameError = ref(false)
+const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+
+const nameError      = ref(false)
+const representatives = ref([])
 
 const blankForm = (defaultCatId = null) => ({
-  id:         null,
-  categoryId: defaultCatId,
-  name:       '',
-  city:       '',
-  address:    '',
-  phone:      '',
+  id:             null,
+  categoryId:     defaultCatId,
+  name:           '',
+  city:           '',
+  address:        '',
+  phone:          '',
+  contact_person: '',
+  contact_id:     null,
 })
 
 const form = ref(blankForm())
+
+onMounted(async () => {
+  try {
+    const { data } = await api.get('/api/contacts')
+    const repCat = data.find(cat =>
+      cat.title.toLowerCase().includes('представител')
+    )
+    representatives.value = repCat ? repCat.contacts : []
+  } catch (e) {
+    console.error('Ошибка загрузки контактов:', e)
+  }
+})
 
 watch(() => props.modelValue, (open) => {
   if (!open) return
   nameError.value = false
   if (props.initialData) {
-    form.value = { ...props.initialData }
+    form.value = { ...blankForm(), ...props.initialData }
   } else {
     form.value = blankForm(props.columns[0]?.id ?? null)
   }
@@ -119,6 +153,15 @@ watch(() => props.modelValue, (open) => {
 const categoryOptions = computed(() =>
   props.columns.map(c => ({ id: c.id, title: c.title }))
 )
+
+function onContactSelect(id) {
+  if (!id) {
+    form.value.contact_person = ''
+    return
+  }
+  const contact = representatives.value.find(r => r.id === id)
+  form.value.contact_person = contact?.name || ''
+}
 
 const save = () => {
   if (!form.value.name.trim()) { nameError.value = true; return }

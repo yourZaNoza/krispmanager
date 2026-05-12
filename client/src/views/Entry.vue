@@ -337,7 +337,7 @@ const login = async () => {
       localStorage.setItem('user', JSON.stringify(response.data.user))
 
       closeLogin()
-      router.push('/tasks')
+      router.push(response.data.user.role ? '/tasks' : '/no-role')
     } catch (error) {
       console.error(error)
       alert(error.response?.data?.message || 'Произошла ошибка при входе')

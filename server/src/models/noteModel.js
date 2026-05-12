@@ -9,7 +9,7 @@ function safeJSON(val, fallback) {
 class Note {
   static async findByUser(userId) {
     const [rows] = await db.execute(
-      'SELECT * FROM notes WHERE user_id = ? ORDER BY created_at DESC',
+      'SELECT * FROM notes WHERE user_id = ? AND deleted_at IS NULL ORDER BY created_at DESC',
       [userId]
     )
     return rows.map(r => ({
@@ -22,6 +22,25 @@ class Note {
       comments:    safeJSON(r.comments,    []),
       history:     safeJSON(r.history,     []),
       attachments: safeJSON(r.attachments, []),
+    }))
+  }
+
+  static async findAllForUserArchive(userId) {
+    const [rows] = await db.execute(
+      'SELECT * FROM notes WHERE user_id = ? ORDER BY deleted_at IS NOT NULL, created_at DESC',
+      [userId]
+    )
+    return rows.map(r => ({
+      id:          r.id,
+      title:       r.title   || '',
+      date:        r.date    ? r.date.toISOString().split('T')[0] : null,
+      time:        r.time    || '',
+      tags:        safeJSON(r.tags,        []),
+      lists:       safeJSON(r.lists,       []),
+      comments:    safeJSON(r.comments,    []),
+      history:     safeJSON(r.history,     []),
+      attachments: safeJSON(r.attachments, []),
+      deleted:     !!r.deleted_at,
     }))
   }
 
@@ -63,9 +82,9 @@ class Note {
     )
   }
 
-  static async delete(id, userId) {
+  static async softDelete(id, userId) {
     await db.execute(
-      'DELETE FROM notes WHERE id = ? AND user_id = ?',
+      'UPDATE notes SET deleted_at = NOW() WHERE id = ? AND user_id = ?',
       [id, userId]
     )
   }

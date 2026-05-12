@@ -16,11 +16,30 @@ function mapContact(c, registeredEmailMap) {
   }
 }
 
+function mapEmployee(emp, categoryId) {
+  return {
+    id:           `emp_${emp.id}`,
+    employeeId:   emp.id,
+    categoryId,
+    name:         emp.name     || '',
+    city:         '',
+    email:        emp.email    || '',
+    phone:        '',
+    isRegistered: true,
+    isEmployee:   true,
+    role:         emp.role     || '',
+    position:     emp.position || '',
+  }
+}
+
 // GET /api/contacts
 exports.getAll = async (req, res) => {
   try {
     const userId = req.user && req.user.id
     if (!userId) return res.status(401).json({ message: 'Не авторизован' })
+
+    const viewer = await Employee.findById(userId)
+    const isPrivileged = viewer && (viewer.role === 'администратор' || viewer.role === 'менеджер')
 
     let categories = await ContactCategory.findByUser(userId)
     if (!categories.length) {
@@ -28,17 +47,40 @@ exports.getAll = async (req, res) => {
       categories = await ContactCategory.findByUser(userId)
     }
 
-    const contacts = await Contact.findByUser(userId)
+    const allEmployees = await Employee.findAll()
 
-    const emails = contacts.map(c => c.email).filter(Boolean)
-    const registeredEmails = await Employee.findRegisteredEmails(emails)
+    let result
+    if (isPrivileged) {
+      const allContacts = await Contact.findAllSystem()
+      const emails = allContacts.map(c => c.email).filter(Boolean)
+      const registeredEmails = await Employee.findRegisteredEmails(emails)
 
-    const result = categories.map(cat => ({
-      id:       cat.id,
-      title:    cat.title,
-      color:    cat.color,
-      contacts: contacts.filter(c => c.category_id === cat.id).map(c => mapContact(c, registeredEmails)),
-    }))
+      result = categories.map(cat => {
+        if (cat.title.toLowerCase().includes('сотрудник')) {
+          return { id: cat.id, title: cat.title, color: cat.color, contacts: allEmployees.map(e => mapEmployee(e, cat.id)) }
+        }
+        const contacts = allContacts
+          .filter(c => c.cat_title === cat.title)
+          .map(c => mapContact(c, registeredEmails))
+        return { id: cat.id, title: cat.title, color: cat.color, contacts }
+      })
+    } else {
+      const contacts = await Contact.findByUser(userId)
+      const emails = contacts.map(c => c.email).filter(Boolean)
+      const registeredEmails = await Employee.findRegisteredEmails(emails)
+
+      result = categories.map(cat => {
+        if (cat.title.toLowerCase().includes('сотрудник')) {
+          return { id: cat.id, title: cat.title, color: cat.color, contacts: allEmployees.map(e => mapEmployee(e, cat.id)) }
+        }
+        return {
+          id:       cat.id,
+          title:    cat.title,
+          color:    cat.color,
+          contacts: contacts.filter(c => c.category_id === cat.id).map(c => mapContact(c, registeredEmails)),
+        }
+      })
+    }
 
     res.json(result)
   } catch (err) {

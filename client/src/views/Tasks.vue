@@ -142,7 +142,6 @@
           :task-filter="taskFilter"
           style="margin-top: 32px"
           @task-click="openDetail"
-          @toggle-complete="onToggleComplete"
           @delete-task="onDeleteTask"
         />
       </div>
@@ -289,35 +288,15 @@ const openDetail = (task, column) => {
 }
 
 // ── Save handlers ──────────────────────────────────────
-const onToggleComplete = async (task, completed) => {
-  task.completed = completed
-  const col = columns.value.find((c) => c.tasks.some((t) => t.id === task.id))
-  if (!col) return
-  try {
-    await api.put(`/api/tasks/${task.id}`, {
-      catId:        col.id,
-      title:        task.title,
-      description:  task.description,
-      deadlineRaw:  task.deadlineRaw ? new Date(task.deadlineRaw).toISOString() : null,
-      dateFromRaw:  task.dateFromRaw ? new Date(task.dateFromRaw).toISOString() : null,
-      enterprise:   task.enterprise,
-      tags:         task.tags,
-      lists:        task.lists,
-      participants: task.participants,
-      attachments:  task.attachments,
-      comments:     task.comments,
-      history:      task.history,
-      completed:    completed ? 1 : 0,
-    })
-  } catch (err) {
-    task.completed = !completed
-    console.error('Ошибка обновления задачи:', err)
-  }
-}
 
-const onDeleteTask = (task, col) => {
-  const idx = col.tasks.findIndex((t) => t.id === task.id)
-  if (idx >= 0) col.tasks.splice(idx, 1)
+const onDeleteTask = async (task, col) => {
+  try {
+    await api.delete(`/api/tasks/${task.id}`)
+    const idx = col.tasks.findIndex((t) => t.id === task.id)
+    if (idx >= 0) col.tasks.splice(idx, 1)
+  } catch (err) {
+    console.error('Ошибка удаления задачи:', err)
+  }
 }
 
 const onRenameColumn = async ({ id, title, color }) => {

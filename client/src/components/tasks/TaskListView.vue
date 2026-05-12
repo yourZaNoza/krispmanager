@@ -1,15 +1,20 @@
 <template>
   <div class="task-list-view" v-bind="$attrs">
-    <div v-for="col in columns" :key="col.id" class="category-section">
+
+    <div v-for="(col, colIdx) in columns" :key="col.id" class="category-section">
 
       <!-- Category header -->
-      <div class="cat-header d-flex align-center" @click="toggle(col.id)">
-        <v-icon size="16" color="grey-darken-1" class="chevron">
+      <div
+        class="cat-header"
+        :class="{ 'cat-header--not-first': colIdx > 0 }"
+        @click="toggle(col.id)"
+      >
+        <v-icon size="15" color="grey-darken-1" class="chevron-icon">
           {{ collapsed[col.id] ? 'mdi-chevron-down' : 'mdi-chevron-up' }}
         </v-icon>
-        <v-icon :color="col.dotColor" size="10" class="mx-2">mdi-circle</v-icon>
+        <v-icon :color="col.dotColor" size="10">mdi-circle</v-icon>
         <span class="cat-title">{{ col.title }}</span>
-        <span class="cat-count ml-2">{{ pluralCount(getVisibleTasks(col).length) }}</span>
+        <span class="cat-count">{{ pluralCount(getVisibleTasks(col).length) }}</span>
       </div>
 
       <!-- Task rows -->
@@ -17,58 +22,49 @@
         <div
           v-for="task in getVisibleTasks(col)"
           :key="task.id"
-          class="task-row d-flex align-center"
+          class="task-row"
           :class="{ 'task-row--done': task.completed }"
+          @click="$emit('task-click', task, col)"
         >
-          <!-- Checkbox -->
-          <v-checkbox
-            :model-value="task.completed"
-            density="compact"
-            hide-details
-            color="grey-darken-2"
-            class="task-checkbox"
-            @update:model-value="$emit('toggle-complete', task, $event)"
-            @click.stop
-          />
-
           <!-- Title -->
-          <span
-            class="task-title flex-grow-1"
-            :class="{ 'task-title--done': task.completed }"
-            @click="$emit('task-click', task, col)"
-          >{{ task.title }}</span>
+          <span class="task-title" :class="{ 'task-title--done': task.completed }">
+            {{ task.title }}
+          </span>
 
           <!-- Deadline -->
           <span
             v-if="task.deadline && task.deadline !== '—'"
-            class="deadline-cell d-flex align-center text-caption text-grey-darken-1"
+            class="deadline-cell"
           >
-            <v-icon size="13" class="mr-1">mdi-calendar-outline</v-icon>
+            <v-icon size="13" class="mr-1" style="opacity: 0.6">mdi-calendar-outline</v-icon>
             Срок до {{ task.deadline }}
           </span>
+          <span v-else class="deadline-cell" />
 
           <!-- Participant avatars -->
-          <div v-if="task.participants?.length" class="avatars-wrap">
-            <v-tooltip
-              v-for="(p, i) in task.participants.slice(0, 3)"
-              :key="i"
-              :text="p.name || ''"
-              location="top"
-            >
-              <template #activator="{ props: tp }">
-                <UserAvatar
-                  v-bind="tp"
-                  :user-id="p.id"
-                  :name="p.name"
-                  :size="24"
-                  :style="{ marginLeft: i > 0 ? '-6px' : '0', border: '2px solid white', zIndex: 10 - i }"
-                />
-              </template>
-            </v-tooltip>
+          <div class="avatars-wrap">
+            <template v-if="task.participants?.length">
+              <v-tooltip
+                v-for="(p, i) in task.participants.slice(0, 3)"
+                :key="i"
+                :text="p.name || ''"
+                location="top"
+              >
+                <template #activator="{ props: tp }">
+                  <UserAvatar
+                    v-bind="tp"
+                    :user-id="p.id"
+                    :name="p.name"
+                    :size="24"
+                    :style="{ marginLeft: i > 0 ? '-6px' : '0', border: '2px solid white', zIndex: 10 - i }"
+                  />
+                </template>
+              </v-tooltip>
+            </template>
           </div>
 
           <!-- Tags -->
-          <div v-if="task.tags?.length" class="tags-wrap">
+          <div class="tags-wrap">
             <span
               v-for="tag in task.tags"
               :key="tag.label"
@@ -85,10 +81,10 @@
               </v-btn>
             </template>
             <v-list density="compact" rounded="lg" min-width="160">
-              <v-list-item @click="$emit('task-click', task, col)">
+              <v-list-item @click.stop="$emit('task-click', task, col)">
                 <v-list-item-title>Редактировать</v-list-item-title>
               </v-list-item>
-              <v-list-item @click="askDelete(task)">
+              <v-list-item @click.stop="askDelete(task)">
                 <v-list-item-title class="text-red">Удалить</v-list-item-title>
               </v-list-item>
             </v-list>
@@ -105,18 +101,8 @@
           Вы уверены, что хотите удалить задачу?
         </p>
         <div class="d-flex justify-center" style="gap: 12px">
-          <v-btn
-            variant="outlined"
-            color="grey-darken-1"
-            class="text-none"
-            @click="deleteDialog = false"
-          >Отмена</v-btn>
-          <v-btn
-            variant="flat"
-            color="red"
-            class="text-none text-white"
-            @click="confirmDelete"
-          >Удалить</v-btn>
+          <v-btn variant="outlined" color="grey-darken-1" class="text-none" @click="deleteDialog = false">Отмена</v-btn>
+          <v-btn variant="flat" color="red" class="text-none text-white" @click="confirmDelete">Удалить</v-btn>
         </div>
       </v-card>
     </v-dialog>
@@ -133,25 +119,23 @@ const props = defineProps({
   columns:    { type: Array, required: true },
   taskFilter: { default: null },
 })
-const emit = defineEmits(['task-click', 'toggle-complete', 'delete-task'])
+const emit = defineEmits(['task-click', 'delete-task'])
 
 function getVisibleTasks(col) {
   return props.taskFilter ? col.tasks.filter(props.taskFilter) : col.tasks
 }
 
-// ── Collapse state ──────────────────────────────────────
 const collapsed = reactive({})
-const toggle = (id) => { collapsed[id] = !collapsed[id] }
+const toggle    = (id) => { collapsed[id] = !collapsed[id] }
 
-// ── Delete dialog ───────────────────────────────────────
 const deleteDialog = ref(false)
 const pendingTask  = ref(null)
 const pendingCol   = ref(null)
 
 const askDelete = (task) => {
   const col = props.columns.find(c => c.tasks.some(t => t.id === task.id))
-  pendingTask.value = task
-  pendingCol.value  = col
+  pendingTask.value  = task
+  pendingCol.value   = col
   deleteDialog.value = true
 }
 
@@ -164,10 +148,8 @@ const confirmDelete = () => {
   pendingCol.value   = null
 }
 
-// ── Helpers ─────────────────────────────────────────────
 const pluralCount = (n) =>
   n === 1 ? `${n} объект` : n >= 2 && n <= 4 ? `${n} объекта` : `${n} объектов`
-
 </script>
 
 <style scoped>
@@ -177,75 +159,93 @@ const pluralCount = (n) =>
   overflow: hidden;
 }
 
+/* ── Category section ───────────────────────────────────── */
+.category-section {
+  background: #fff;
+}
+
 /* Category header */
 .cat-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   height: 48px;
   padding: 0 16px;
   cursor: pointer;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e8e8e8;
   user-select: none;
-  background: #fff;
+}
+.cat-header--not-first {
+  border-top: 8px solid #f5f5f5;
 }
 .cat-header:hover { background: #fafafa; }
+
+.chevron-icon { flex-shrink: 0; }
+
 .cat-title {
   font-size: 14px;
   font-weight: 700;
 }
 .cat-count {
   font-size: 12px;
-  color: #757575;
+  color: #9e9e9e;
+  margin-left: 4px;
 }
 
-/* Task row */
+/* ── Task row ───────────────────────────────────────────── */
 .task-row {
+  display: flex;
+  align-items: center;
   min-height: 52px;
-  padding: 6px 16px 6px 8px;
+  padding: 8px 12px 8px 20px;
+  gap: 12px;
   border-bottom: 1px solid #f0f0f0;
-  gap: 8px;
   background: #fff;
-  transition: background 0.12s;
+  transition: background 0.1s;
+  cursor: pointer;
 }
 .task-row:last-child { border-bottom: none; }
-.task-row:hover { background: #fafafa; }
-.task-row--done { background: #fafafa; }
+.task-row:hover      { background: #fafafa; }
+.task-row--done      { background: #fafafa; }
 
-.task-checkbox {
-  flex-shrink: 0;
-}
-
+/* Title — takes all free space */
 .task-title {
+  flex: 1 1 0;
   font-size: 14px;
-  cursor: pointer;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.task-title:hover { text-decoration: underline; }
 .task-title--done {
-  text-decoration: line-through;
   color: #9e9e9e;
 }
 
+/* Deadline — fixed width so it sits in the "middle" */
 .deadline-cell {
-  white-space: nowrap;
-  flex-shrink: 0;
-  margin-right: 12px;
-}
-
-.avatars-wrap {
+  flex: 0 0 190px;
   display: flex;
-  flex-shrink: 0;
-  margin-right: 8px;
+  align-items: center;
+  font-size: 13px;
+  color: #757575;
+  white-space: nowrap;
 }
 
+/* Avatars */
+.avatars-wrap {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-width: 32px;
+}
+
+/* Tags */
 .tags-wrap {
+  flex: 0 0 auto;
   display: flex;
   gap: 4px;
   flex-wrap: nowrap;
-  flex-shrink: 0;
 }
-
 .tag-pill {
   font-size: 11px;
   font-weight: 500;
@@ -253,18 +253,14 @@ const pluralCount = (n) =>
   border-radius: 4px;
   white-space: nowrap;
 }
-
-/* Remove default checkbox padding/margin */
-.task-checkbox :deep(.v-input__control) { flex: 0 0 auto; }
-.task-checkbox :deep(.v-selection-control) { min-height: unset; }
-
 </style>
 
 <style>
-.v-theme--dark .task-list-view { border-color: rgba(255, 255, 255, 0.12); }
-.v-theme--dark .task-list-view .cat-header { background: transparent !important; border-color: rgba(255, 255, 255, 0.12); }
-.v-theme--dark .task-list-view .cat-header:hover { background: rgba(255, 255, 255, 0.04) !important; }
-.v-theme--dark .task-list-view .task-row { background: transparent !important; border-color: rgba(255, 255, 255, 0.06); }
-.v-theme--dark .task-list-view .task-row:hover { background: rgba(255, 255, 255, 0.04) !important; }
-.v-theme--dark .task-list-view .task-row--done { background: transparent !important; }
+.v-theme--dark .task-list-view                      { border-color: rgba(255,255,255,0.12); }
+.v-theme--dark .task-list-view .category-section    { background: transparent !important; }
+.v-theme--dark .task-list-view .cat-header          { background: transparent !important; border-color: rgba(255,255,255,0.1); }
+.v-theme--dark .task-list-view .cat-header--not-first { border-top-color: rgba(255,255,255,0.06) !important; }
+.v-theme--dark .task-list-view .cat-header:hover    { background: rgba(255,255,255,0.04) !important; }
+.v-theme--dark .task-list-view .task-row            { background: transparent !important; border-color: rgba(255,255,255,0.06); }
+.v-theme--dark .task-list-view .task-row:hover      { background: rgba(255,255,255,0.04) !important; }
 </style>

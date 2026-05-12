@@ -20,6 +20,10 @@
         <v-icon size="13">mdi-phone-outline</v-icon>
         {{ enterprise.phone }}
       </span>
+      <span v-if="enterprise.contact_person" class="d-flex align-center" style="gap: 4px">
+        <v-icon size="13">mdi-account-outline</v-icon>
+        {{ enterprise.contact_person }}
+      </span>
     </div>
   </v-card>
 </template>

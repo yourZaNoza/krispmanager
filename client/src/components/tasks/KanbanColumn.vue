@@ -109,7 +109,10 @@
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
+import axios from 'axios'
 import TaskCard from './TaskCard.vue'
+
+const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
 const props = defineProps({
   column:     { type: Object,   required: true },
@@ -130,12 +133,18 @@ const askDelete = (task) => {
   deleteTaskDialog.value = true
 }
 
-const confirmDeleteTask = () => {
+const confirmDeleteTask = async () => {
   if (!pendingTask.value) return
-  const idx = props.column.tasks.findIndex((t) => t.id === pendingTask.value.id)
-  if (idx >= 0) props.column.tasks.splice(idx, 1)
+  const task = pendingTask.value
   deleteTaskDialog.value = false
   pendingTask.value = null
+  try {
+    await api.delete(`/api/tasks/${task.id}`)
+    const idx = props.column.tasks.findIndex((t) => t.id === task.id)
+    if (idx >= 0) props.column.tasks.splice(idx, 1)
+  } catch (err) {
+    console.error('Ошибка удаления задачи:', err)
+  }
 }
 
 // ── Category rename ───────────────────────────────────────

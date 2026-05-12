@@ -169,11 +169,13 @@ const onSave = async (form) => {
   try {
     if (form.id) {
       await api.put(`/api/enterprises/${form.id}`, {
-        categoryId: form.categoryId,
-        name:       form.name,
-        city:       form.city,
-        address:    form.address,
-        phone:      form.phone,
+        categoryId:     form.categoryId,
+        name:           form.name,
+        city:           form.city,
+        address:        form.address,
+        phone:          form.phone,
+        contact_person: form.contact_person,
+        contact_id:     form.contact_id,
       })
       // Move between categories if changed, otherwise update in place
       for (const col of columns.value) {
@@ -190,11 +192,13 @@ const onSave = async (form) => {
       }
     } else {
       const { data } = await api.post('/api/enterprises', {
-        categoryId: form.categoryId,
-        name:       form.name,
-        city:       form.city,
-        address:    form.address,
-        phone:      form.phone,
+        categoryId:     form.categoryId,
+        name:           form.name,
+        city:           form.city,
+        address:        form.address,
+        phone:          form.phone,
+        contact_person: form.contact_person,
+        contact_id:     form.contact_id,
       })
       const target = columns.value.find(c => c.id === form.categoryId)
       if (target) target.enterprises.push(data)

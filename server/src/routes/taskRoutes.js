@@ -12,5 +12,6 @@ router.put('/categories/:id',     auth, ctrl.updateCategory)
 router.delete('/categories/:id',  auth, ctrl.deleteCategory)
 router.post('/',                  auth, ctrl.createTask)
 router.put('/:id',                auth, ctrl.updateTask)
+router.delete('/:id',             auth, ctrl.deleteTask)
 
 module.exports = router

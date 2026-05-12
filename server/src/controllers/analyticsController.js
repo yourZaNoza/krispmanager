@@ -7,7 +7,8 @@ exports.getSummary = async (req, res) => {
   try {
     const [[{ tasks }]] = await db.execute(
       `SELECT COUNT(*) AS tasks FROM tasks
-       WHERE user_id = ? OR JSON_CONTAINS(participants, JSON_OBJECT('id', ?))`,
+       WHERE (user_id = ? OR JSON_CONTAINS(participants, JSON_OBJECT('id', ?)))
+         AND deleted_at IS NULL`,
       [userId, userId]
     )
     const [[{ notes }]]       = await db.execute('SELECT COUNT(*) AS notes       FROM notes       WHERE user_id = ?', [userId])
@@ -37,6 +38,7 @@ exports.getParticipating = async (req, res) => {
        LEFT JOIN tasks_category tc ON t.id_category = tc.id_category
        LEFT JOIN employees e ON e.id = t.user_id
        WHERE JSON_CONTAINS(t.participants, JSON_OBJECT('id', ?))
+         AND t.deleted_at IS NULL
        ORDER BY t.deadline IS NULL, t.deadline ASC, t.created_at DESC`,
       [userId]
     )
@@ -66,6 +68,7 @@ exports.getEnterprises = async (req, res) => {
        LEFT JOIN enterprise_categories ec ON e.category_id = ec.id
        LEFT JOIN tasks t ON t.enterprise = e.name
          AND (t.user_id = ? OR JSON_CONTAINS(t.participants, JSON_OBJECT('id', ?)))
+         AND t.deleted_at IS NULL
        WHERE e.user_id = ?
        GROUP BY e.id, e.name, e.city, ec.title, ec.color
        ORDER BY taskCount DESC`,

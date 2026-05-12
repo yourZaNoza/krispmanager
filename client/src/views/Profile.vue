@@ -22,9 +22,9 @@
         <span style="font-size: 24px; font-weight: 700;">Профиль</span>
       </div>
 
-      <div class="px-6 pb-6" style="max-width: 600px;">
+      <div class="profile-content">
         <!-- Аватар -->
-        <div class="d-flex align-center mb-8" style="gap: 20px;">
+        <div class="avatar-section">
           <div class="avatar-wrap" @click="triggerAvatarPick">
             <UserAvatar :user-id="userId" :name="form.name" :size="80" />
             <div class="avatar-overlay">
@@ -39,20 +39,20 @@
             style="display: none"
             @change="onAvatarPick"
           />
-          <div>
-            <p class="text-subtitle-1 font-weight-medium mb-0">{{ form.name || '—' }}</p>
-            <p class="text-body-2 text-grey mb-1">{{ form.email }}</p>
-            <span class="text-caption text-grey">Нажмите на аватар для загрузки (до 25 МБ)</span>
+          <div class="avatar-info">
+            <p class="avatar-name">{{ form.name || '—' }}</p>
+            <p class="avatar-email">{{ form.email }}</p>
+            <span class="avatar-hint">Нажмите на аватар для загрузки (до 25 МБ)</span>
           </div>
         </div>
 
-        <v-divider class="mb-6" />
+        <v-divider class="section-divider" />
 
         <!-- Форма -->
         <v-form ref="profileForm" @submit.prevent="save">
-          <div class="d-flex flex-column" style="gap: 20px;">
-            <div>
-              <p class="text-caption text-grey mb-1">Имя</p>
+          <div class="form-fields">
+            <div class="field-group">
+              <label class="field-label">Имя</label>
               <v-text-field
                 v-model="form.name"
                 variant="outlined"
@@ -62,8 +62,8 @@
               />
             </div>
 
-            <div>
-              <p class="text-caption text-grey mb-1">Email</p>
+            <div class="field-group">
+              <label class="field-label">Email</label>
               <v-text-field
                 v-model="form.email"
                 variant="outlined"
@@ -74,8 +74,8 @@
               />
             </div>
 
-            <div>
-              <p class="text-caption text-grey mb-1">Должность</p>
+            <div class="field-group">
+              <label class="field-label">Должность</label>
               <v-text-field
                 v-model="form.position"
                 variant="outlined"
@@ -85,21 +85,23 @@
               />
             </div>
 
-            <div>
-              <p class="text-caption text-grey mb-1">Роль</p>
+            <div class="field-group">
+              <label class="field-label">Роль</label>
               <v-select
+                v-if="canEditRole"
                 v-model="form.role"
                 :items="ROLES"
                 variant="outlined"
                 density="comfortable"
                 hide-details
               />
+              <div v-else class="field-readonly">{{ form.role || '—' }}</div>
             </div>
           </div>
 
-          <v-divider class="my-6" />
+          <v-divider class="section-divider" />
 
-          <div class="d-flex" style="gap: 12px;">
+          <div class="form-actions">
             <v-btn
               type="submit"
               style="background-color: #037247;"
@@ -127,9 +129,9 @@
       </div>
 
       <!-- Совместные задачи -->
-      <div class="px-6 pb-8" style="max-width: 800px;">
-        <v-divider class="mb-6" />
-        <div class="d-flex align-center mb-4" style="gap: 10px;">
+      <div class="tasks-section">
+        <v-divider class="section-divider" />
+        <div class="d-flex align-center mb-5" style="gap: 10px;">
           <span style="font-size: 18px; font-weight: 600;">Совместные задачи</span>
           <v-chip size="small" color="success" variant="tonal">{{ participatingTasks.length }}</v-chip>
         </div>
@@ -167,7 +169,7 @@
             </div>
           </div>
         </div>
-      </div>
+      </div><!-- /tasks-section -->
     </v-main>
   </v-app>
 </template>
@@ -183,6 +185,7 @@ import { setAvatarUrl } from '@/utils/avatarCache'
 const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
 
 const ROLES = ['сотрудник', 'менеджер', 'администратор']
+const ADMIN_EMAIL = 'test@gmail.com'
 
 const sidebarOpen = ref(true)
 const saved = ref(false)
@@ -195,7 +198,10 @@ const loadingTasks = ref(false)
 
 const form     = ref({ name: '', email: '', position: '', role: 'сотрудник' })
 const original = ref({ name: '', email: '', position: '', role: 'сотрудник' })
-const userId   = ref(null)
+const userId          = ref(null)
+const currentUserEmail = ref('')
+
+const canEditRole = computed(() => currentUserEmail.value === ADMIN_EMAIL)
 
 const avatarInput   = ref(null)
 const avatarLoading = ref(false)
@@ -236,11 +242,12 @@ onMounted(async () => {
     if (stored) {
       const user = JSON.parse(stored)
       userId.value = user.id || null
+      currentUserEmail.value = user.email || ''
       form.value = {
         name:     user.name     || '',
         email:    user.email    || '',
         position: user.position || '',
-        role:     user.role     || 'сотрудник',
+        role:     user.role     || null,
       }
       original.value = { ...form.value }
     }
@@ -288,11 +295,8 @@ const reset = () => {
 </script>
 
 <style scoped>
-.profile-header {
-  height: 64px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
-}
-
+/* App bar */
+.toolbar-no-padding :deep(.v-toolbar__content) { padding: 0 !important; }
 .toggle-btn {
   width: 36px !important;
   height: 36px !important;
@@ -300,10 +304,80 @@ const reset = () => {
   flex-shrink: 0;
 }
 
-.toolbar-no-padding :deep(.v-toolbar__content) {
-  padding: 0 !important;
+/* Page header */
+.profile-header {
+  height: 56px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 0 24px;
 }
 
+/* Main content wrapper */
+.profile-content {
+  max-width: 560px;
+  padding: 28px 24px 8px;
+}
+
+/* Avatar interactive wrapper */
+.avatar-wrap {
+  position: relative;
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.avatar-wrap:hover .avatar-overlay { opacity: 1; }
+.avatar-overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+
+/* Avatar block */
+.avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.avatar-info { display: flex; flex-direction: column; gap: 3px; }
+.avatar-name  { font-size: 16px; font-weight: 600; color: #1a1a1a; margin: 0; }
+.avatar-email { font-size: 13px; color: #757575; margin: 0; }
+.avatar-hint  { font-size: 12px; color: #9e9e9e; }
+
+/* Dividers */
+.section-divider { margin-bottom: 24px; }
+
+/* Form fields */
+.form-fields { display: flex; flex-direction: column; gap: 20px; margin-bottom: 24px; }
+.field-group { display: flex; flex-direction: column; gap: 6px; }
+.field-label { font-size: 12px; color: #757575; font-weight: 400; }
+
+/* Read-only role field — matches v-text-field outlined comfortable */
+.field-readonly {
+  border: 1px solid rgba(0, 0, 0, 0.38);
+  border-radius: 4px;
+  padding: 10px 16px;
+  font-size: 16px;
+  color: rgba(0, 0, 0, 0.6);
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Form action buttons */
+.form-actions { display: flex; gap: 12px; padding-bottom: 8px; }
+
+/* Shared tasks section */
+.tasks-section {
+  max-width: 560px;
+  padding: 0 24px 40px;
+}
 .part-task-row {
   padding: 10px 14px;
   border: 1px solid rgba(0, 0, 0, 0.1);
@@ -313,6 +387,14 @@ const reset = () => {
 </style>
 
 <style>
+/* Dark theme overrides */
+.v-theme--dark .avatar-name  { color: #ffffff !important; }
+.v-theme--dark .profile-header { border-color: rgba(255, 255, 255, 0.08) !important; }
+.v-theme--dark .field-readonly {
+  border-color: rgba(255, 255, 255, 0.3) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+}
 .v-theme--dark .part-task-row {
   background: transparent !important;
   border-color: rgba(255, 255, 255, 0.12) !important;

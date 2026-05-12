@@ -53,7 +53,7 @@ exports.remove = async (req, res) => {
     const userId = req.user?.id
     if (!userId) return res.status(401).json({ message: 'Не авторизован' })
     const id = parseInt(req.params.id, 10)
-    await Note.delete(id, userId)
+    await Note.softDelete(id, userId)
     res.json({ message: 'Заметка удалена' })
   } catch (err) {
     console.error('delete note error:', err)

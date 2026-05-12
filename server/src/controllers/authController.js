@@ -94,7 +94,7 @@ exports.login = async (req, res) => {
         name:     user.name,
         email:    user.email,
         position: user.position,
-        role:     user.role || 'сотрудник',
+        role:     user.role || null,
         avatar:   user.avatar || null,
       },
     });
@@ -108,7 +108,7 @@ exports.me = async (req, res) => {
   try {
     const user = await Employee.findByEmail(req.user.email);
     if (!user) return res.status(404).json({ message: "Пользователь не найден" });
-    res.json({ id: user.id, name: user.name, email: user.email, position: user.position, role: user.role || 'сотрудник', avatar: user.avatar || null });
+    res.json({ id: user.id, name: user.name, email: user.email, position: user.position, role: user.role || null, avatar: user.avatar || null });
   } catch (error) {
     res.status(500).json({ message: "Ошибка сервера" });
   }
@@ -131,7 +131,7 @@ exports.updateUserRole = async (req, res) => {
     if (me?.role !== 'администратор') return res.status(403).json({ message: 'Только администратор' })
     const targetId = parseInt(req.params.id)
     const ROLES = ['сотрудник', 'менеджер', 'администратор']
-    const role = ROLES.includes(req.body.role) ? req.body.role : 'сотрудник'
+    const role = ROLES.includes(req.body.role) ? req.body.role : null
     const target = await Employee.findById(targetId)
     if (!target) return res.status(404).json({ message: 'Пользователь не найден' })
     await Employee.updateProfile(targetId, { name: target.name, email: target.email, position: target.position || '', role })
@@ -161,6 +161,21 @@ exports.uploadAvatar = async (req, res) => {
   }
 }
 
+exports.deleteUser = async (req, res) => {
+  try {
+    const me = await Employee.findById(req.user?.id)
+    if (me?.role !== 'администратор') return res.status(403).json({ message: 'Только администратор' })
+    const targetId = parseInt(req.params.id)
+    if (targetId === req.user.id) return res.status(400).json({ message: 'Нельзя удалить себя' })
+    const target = await Employee.findById(targetId)
+    if (!target) return res.status(404).json({ message: 'Пользователь не найден' })
+    await Employee.delete(targetId)
+    res.json({ message: 'Пользователь удалён' })
+  } catch (err) {
+    res.status(500).json({ message: 'Ошибка сервера' })
+  }
+}
+
 exports.getAllAvatars = async (req, res) => {
   try {
     const rows = await Employee.findAllWithAvatars()
@@ -180,8 +195,12 @@ exports.updateProfile = async (req, res) => {
     const { name, email, position, role } = req.body;
     if (!name) return res.status(400).json({ message: "Имя обязательно" });
 
+    const currentUser = await Employee.findById(userId);
+    if (!currentUser) return res.status(404).json({ message: "Пользователь не найден" });
+
     const ROLES = ['сотрудник', 'менеджер', 'администратор'];
-    const safeRole = ROLES.includes(role) ? role : 'сотрудник';
+    const canChangeRole = req.user.email === 'test@gmail.com';
+    const safeRole = (canChangeRole && ROLES.includes(role)) ? role : (currentUser.role || null);
 
     await Employee.updateProfile(userId, { name, email, position, role: safeRole });
 

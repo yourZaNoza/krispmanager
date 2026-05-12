@@ -257,6 +257,20 @@ exports.getParticipatingTasks = async (req, res) => {
   }
 }
 
+// DELETE /api/tasks/:id  (soft-delete)
+exports.deleteTask = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id
+    if (!userId) return res.status(401).json({ message: 'Не авторизован' })
+    const taskId = parseInt(req.params.id, 10)
+    await Task.softDelete(taskId, userId)
+    res.json({ message: 'Задача удалена' })
+  } catch (err) {
+    console.error('deleteTask error:', err)
+    res.status(500).json({ message: 'Ошибка сервера', error: err.message })
+  }
+}
+
 // PUT /api/tasks/:id
 exports.updateTask = async (req, res) => {
   try {

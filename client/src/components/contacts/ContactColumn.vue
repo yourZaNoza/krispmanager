@@ -54,6 +54,7 @@ const deleteDialog   = ref(false)
 const pendingContact = ref(null)
 
 const askDelete = (contact) => {
+  if (contact.isEmployee) return
   pendingContact.value = contact
   deleteDialog.value = true
 }
