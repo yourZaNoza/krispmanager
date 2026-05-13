@@ -1,21 +1,39 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-
-// Мокаем все зависимости контроллера
-vi.mock('../../../src/models/taskModel',         () => ({ default: { findById: vi.fn(), create: vi.fn(), update: vi.fn(), softDelete: vi.fn(), findAllForEmployee: vi.fn() } }))
-vi.mock('../../../src/models/categoryModel',     () => ({ default: { findByUser: vi.fn(), findOne: vi.fn(), create: vi.fn() } }))
-vi.mock('../../../src/models/employeeModel',     () => ({ default: { findById: vi.fn() } }))
-vi.mock('../../../src/models/notificationModel', () => ({ default: { create: vi.fn() } }))
-vi.mock('../../../src/config/sseStore',          () => ({ default: { pushToUser: vi.fn() } }))
-
 import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const ctrl    = require('../../../src/controllers/taskController')
+import { realpathSync } from 'fs'
+import { fileURLToPath } from 'url'
 
-import TaskModel     from '../../../src/models/taskModel'
-import CategoryModel from '../../../src/models/categoryModel'
+const cjsRequire = createRequire(import.meta.url)
 
-const mockTask = { default: TaskModel }
-const mockCat  = { default: CategoryModel }
+function injectCache(relPath, exports) {
+  const p = realpathSync(fileURLToPath(new URL(relPath, import.meta.url)))
+  delete cjsRequire.cache[p]
+  cjsRequire.cache[p] = { id: p, filename: p, loaded: true, exports }
+}
+
+const mockTask = {
+  findById:          vi.fn(),
+  create:            vi.fn(),
+  update:            vi.fn(),
+  softDelete:        vi.fn(),
+  findAllForEmployee:vi.fn(),
+}
+const mockCategory = {
+  findByUser: vi.fn(),
+  findOne:    vi.fn(),
+  create:     vi.fn(),
+}
+const mockEmployee     = { findById: vi.fn() }
+const mockNotification = { create: vi.fn() }
+const mockSseStore     = { pushToUser: vi.fn() }
+
+injectCache('../../../src/models/taskModel.js',         mockTask)
+injectCache('../../../src/models/categoryModel.js',     mockCategory)
+injectCache('../../../src/models/employeeModel.js',     mockEmployee)
+injectCache('../../../src/models/notificationModel.js', mockNotification)
+injectCache('../../../src/config/sseStore.js',          mockSseStore)
+
+const ctrl = cjsRequire('../../../src/controllers/taskController')
 
 function makeRes() {
   const res = { statusCode: 200, body: null }
@@ -45,11 +63,8 @@ describe('taskController', () => {
   })
 
   it('createTask — 201 и возвращает задачу при корректных данных', async () => {
-    TaskModel.create    = vi.fn().mockResolvedValue(42)
-    TaskModel.findById  = vi.fn().mockResolvedValue(null)
-
-    const { default: Employee } = await import('../../../src/models/employeeModel')
-    Employee.findById = vi.fn().mockResolvedValue({ name: 'Иван', role: 'пользователь' })
+    mockTask.create.mockResolvedValue(42)
+    mockEmployee.findById.mockResolvedValue({ name: 'Иван', role: 'пользователь' })
 
     const req = {
       user: { id: 1 },
@@ -73,11 +88,11 @@ describe('taskController', () => {
   })
 
   it('deleteTask — вызывает softDelete и возвращает 200', async () => {
-    TaskModel.softDelete = vi.fn().mockResolvedValue()
+    mockTask.softDelete.mockResolvedValue()
     const req = { user: { id: 5 }, params: { id: '10' } }
     const res = makeRes()
     await ctrl.deleteTask(req, res)
-    expect(TaskModel.softDelete).toHaveBeenCalledWith(10, 5)
+    expect(mockTask.softDelete).toHaveBeenCalledWith(10, 5)
     expect(res.body.message).toContain('удален')
   })
 
@@ -91,8 +106,8 @@ describe('taskController', () => {
   })
 
   it('getCategories — возвращает массив категорий с задачами', async () => {
-    CategoryModel.findByUser        = vi.fn().mockResolvedValue([{ id_category: 1, title: 'Общие', color: '#000', user_id: 1 }])
-    TaskModel.findAllForEmployee    = vi.fn().mockResolvedValue([])
+    mockCategory.findByUser.mockResolvedValue([{ id_category: 1, title: 'Общие', color: '#000', user_id: 1 }])
+    mockTask.findAllForEmployee.mockResolvedValue([])
 
     const req = { user: { id: 1 } }
     const res = makeRes()

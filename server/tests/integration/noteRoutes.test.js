@@ -1,20 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-
-// Мокаем модель и auth-middleware
-vi.mock('../../src/models/noteModel', () => ({
-  default: {
-    findByUser:  vi.fn(),
-    create:      vi.fn(),
-    update:      vi.fn(),
-    softDelete:  vi.fn(),
-  },
-}))
-
 import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const ctrl    = require('../../src/controllers/noteController')
+import { realpathSync } from 'fs'
+import { fileURLToPath } from 'url'
 
-import NoteModel from '../../src/models/noteModel'
+const cjsRequire = createRequire(import.meta.url)
+
+function injectCache(relPath, exports) {
+  const p = realpathSync(fileURLToPath(new URL(relPath, import.meta.url)))
+  delete cjsRequire.cache[p]
+  cjsRequire.cache[p] = { id: p, filename: p, loaded: true, exports }
+}
+
+const mockNote = {
+  findByUser: vi.fn(),
+  create:     vi.fn(),
+  update:     vi.fn(),
+  softDelete: vi.fn(),
+}
+
+injectCache('../../src/models/noteModel.js', mockNote)
+
+const ctrl = cjsRequire('../../src/controllers/noteController')
 
 function makeRes() {
   const res = { statusCode: 200, body: null }
@@ -30,9 +36,7 @@ describe('noteRoutes (integration-style, controller + model)', () => {
   // ── GET /api/notes ────────────────────────────────────────
 
   it('GET /api/notes — возвращает список заметок', async () => {
-    NoteModel.findByUser = vi.fn().mockResolvedValue([
-      { id: 1, title: 'Заметка', tags: [], lists: [] },
-    ])
+    mockNote.findByUser.mockResolvedValue([{ id: 1, title: 'Заметка', tags: [], lists: [] }])
     const req = { user: { id: 1 } }
     const res = makeRes()
     await ctrl.getAll(req, res)
@@ -51,7 +55,7 @@ describe('noteRoutes (integration-style, controller + model)', () => {
   // ── POST /api/notes ───────────────────────────────────────
 
   it('POST /api/notes — создаёт заметку и возвращает 201', async () => {
-    NoteModel.create = vi.fn().mockResolvedValue(10)
+    mockNote.create.mockResolvedValue(10)
     const req = { user: { id: 1 }, body: { title: 'Новая заметка', tags: [], lists: [] } }
     const res = makeRes()
     await ctrl.create(req, res)
@@ -69,22 +73,22 @@ describe('noteRoutes (integration-style, controller + model)', () => {
   // ── PUT /api/notes/:id ────────────────────────────────────
 
   it('PUT /api/notes/:id — обновляет заметку', async () => {
-    NoteModel.update = vi.fn().mockResolvedValue()
+    mockNote.update.mockResolvedValue()
     const req = { user: { id: 1 }, params: { id: '5' }, body: { title: 'Обновлённая', tags: [] } }
     const res = makeRes()
     await ctrl.update(req, res)
-    expect(NoteModel.update).toHaveBeenCalledWith(5, 1, expect.objectContaining({ title: 'Обновлённая' }))
+    expect(mockNote.update).toHaveBeenCalledWith(5, 1, expect.objectContaining({ title: 'Обновлённая' }))
     expect(res.body.message).toContain('обновлен')
   })
 
   // ── DELETE /api/notes/:id ─────────────────────────────────
 
   it('DELETE /api/notes/:id — мягко удаляет заметку', async () => {
-    NoteModel.softDelete = vi.fn().mockResolvedValue()
+    mockNote.softDelete.mockResolvedValue()
     const req = { user: { id: 1 }, params: { id: '3' } }
     const res = makeRes()
     await ctrl.remove(req, res)
-    expect(NoteModel.softDelete).toHaveBeenCalledWith(3, 1)
+    expect(mockNote.softDelete).toHaveBeenCalledWith(3, 1)
     expect(res.body.message).toContain('удален')
   })
 })

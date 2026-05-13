@@ -1,18 +1,35 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-
-vi.mock('../../src/models/taskModel',         () => ({ default: { findById: vi.fn(), create: vi.fn(), update: vi.fn(), softDelete: vi.fn(), findAllForEmployee: vi.fn() } }))
-vi.mock('../../src/models/categoryModel',     () => ({ default: { findByUser: vi.fn(), findOne: vi.fn(), create: vi.fn() } }))
-vi.mock('../../src/models/employeeModel',     () => ({ default: { findById: vi.fn() } }))
-vi.mock('../../src/models/notificationModel', () => ({ default: { create: vi.fn() } }))
-vi.mock('../../src/config/sseStore',          () => ({ default: { pushToUser: vi.fn() } }))
-
 import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const ctrl    = require('../../src/controllers/taskController')
+import { realpathSync } from 'fs'
+import { fileURLToPath } from 'url'
 
-import TaskModel     from '../../src/models/taskModel'
-import CategoryModel from '../../src/models/categoryModel'
-import EmployeeModel from '../../src/models/employeeModel'
+const cjsRequire = createRequire(import.meta.url)
+
+function injectCache(relPath, exports) {
+  const p = realpathSync(fileURLToPath(new URL(relPath, import.meta.url)))
+  delete cjsRequire.cache[p]
+  cjsRequire.cache[p] = { id: p, filename: p, loaded: true, exports }
+}
+
+const mockTask = {
+  findById:          vi.fn(),
+  create:            vi.fn(),
+  update:            vi.fn(),
+  softDelete:        vi.fn(),
+  findAllForEmployee:vi.fn(),
+}
+const mockCategory     = { findByUser: vi.fn(), findOne: vi.fn(), create: vi.fn() }
+const mockEmployee     = { findById: vi.fn() }
+const mockNotification = { create: vi.fn() }
+const mockSseStore     = { pushToUser: vi.fn() }
+
+injectCache('../../src/models/taskModel.js',         mockTask)
+injectCache('../../src/models/categoryModel.js',     mockCategory)
+injectCache('../../src/models/employeeModel.js',     mockEmployee)
+injectCache('../../src/models/notificationModel.js', mockNotification)
+injectCache('../../src/config/sseStore.js',          mockSseStore)
+
+const ctrl = cjsRequire('../../src/controllers/taskController')
 
 function makeRes() {
   const res = { statusCode: 200, body: null }
@@ -28,8 +45,8 @@ describe('taskRoutes (integration-style, controller + model)', () => {
   // ── GET /api/tasks/categories ─────────────────────────────
 
   it('GET /api/tasks/categories — возвращает категории с задачами', async () => {
-    CategoryModel.findByUser     = vi.fn().mockResolvedValue([{ id_category: 1, title: 'Дела', color: '#f00', user_id: 1 }])
-    TaskModel.findAllForEmployee = vi.fn().mockResolvedValue([])
+    mockCategory.findByUser.mockResolvedValue([{ id_category: 1, title: 'Дела', color: '#f00', user_id: 1 }])
+    mockTask.findAllForEmployee.mockResolvedValue([])
 
     const req = { user: { id: 1 } }
     const res = makeRes()
@@ -50,8 +67,8 @@ describe('taskRoutes (integration-style, controller + model)', () => {
   // ── POST /api/tasks ───────────────────────────────────────
 
   it('POST /api/tasks — создаёт задачу и возвращает 201', async () => {
-    TaskModel.create      = vi.fn().mockResolvedValue(99)
-    EmployeeModel.findById = vi.fn().mockResolvedValue({ name: 'Иван', role: 'пользователь' })
+    mockTask.create.mockResolvedValue(99)
+    mockEmployee.findById.mockResolvedValue({ name: 'Иван', role: 'пользователь' })
 
     const req = { user: { id: 1 }, body: { catId: 2, title: 'Задача', participants: [], tags: [] } }
     const res = makeRes()
@@ -72,11 +89,11 @@ describe('taskRoutes (integration-style, controller + model)', () => {
   // ── DELETE /api/tasks/:id ─────────────────────────────────
 
   it('DELETE /api/tasks/:id — мягко удаляет задачу', async () => {
-    TaskModel.softDelete = vi.fn().mockResolvedValue()
+    mockTask.softDelete.mockResolvedValue()
     const req = { user: { id: 1 }, params: { id: '7' } }
     const res = makeRes()
     await ctrl.deleteTask(req, res)
-    expect(TaskModel.softDelete).toHaveBeenCalledWith(7, 1)
+    expect(mockTask.softDelete).toHaveBeenCalledWith(7, 1)
     expect(res.body.message).toContain('удален')
   })
 })

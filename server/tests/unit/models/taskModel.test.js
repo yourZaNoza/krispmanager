@@ -1,19 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-
-// Мокаем БД до импорта модели
-vi.mock('../../../src/config/db', () => ({
-  default: { execute: vi.fn() },
-  execute: vi.fn(),
-}))
-
-import db from '../../../src/config/db'
-
-// Task использует CommonJS require, импортируем через createRequire
 import { createRequire } from 'module'
-const require = createRequire(import.meta.url)
-const Task = require('../../../src/models/taskModel')
+import { realpathSync } from 'fs'
+import { fileURLToPath } from 'url'
 
-const mockDb = db.execute ?? db.default?.execute
+const cjsRequire = createRequire(import.meta.url)
+
+function injectCache(relPath, exports) {
+  const p = realpathSync(fileURLToPath(new URL(relPath, import.meta.url)))
+  delete cjsRequire.cache[p]
+  cjsRequire.cache[p] = { id: p, filename: p, loaded: true, exports }
+}
+
+const mockExecute = vi.fn()
+injectCache('../../../src/config/db.js', { execute: mockExecute })
+
+const Task = cjsRequire('../../../src/models/taskModel')
 
 beforeEach(() => {
   vi.clearAllMocks()
@@ -25,19 +26,17 @@ describe('Task Model', () => {
 
   it('findById — возвращает задачу по id', async () => {
     const mockTask = { id: 1, title: 'Задача 1', user_id: 42, deleted_at: null }
-    mockDb.mockResolvedValueOnce([[mockTask]])
-
+    mockExecute.mockResolvedValueOnce([[mockTask]])
     const result = await Task.findById(1)
     expect(result).toEqual(mockTask)
-    expect(mockDb).toHaveBeenCalledWith(
+    expect(mockExecute).toHaveBeenCalledWith(
       'SELECT * FROM tasks WHERE id = ?',
       [1]
     )
   })
 
   it('findById — возвращает null если задача не найдена', async () => {
-    mockDb.mockResolvedValueOnce([[]])
-
+    mockExecute.mockResolvedValueOnce([[]])
     const result = await Task.findById(9999)
     expect(result).toBeNull()
   })
@@ -45,8 +44,7 @@ describe('Task Model', () => {
   // ── create ────────────────────────────────────────────────
 
   it('create — вставляет запись и возвращает insertId', async () => {
-    mockDb.mockResolvedValueOnce([{ insertId: 77 }])
-
+    mockExecute.mockResolvedValueOnce([{ insertId: 77 }])
     const data = {
       title:       'Новая задача',
       description: 'Описание',
@@ -59,18 +57,15 @@ describe('Task Model', () => {
       attachments: [],
       comments:    [],
     }
-
     const id = await Task.create(42, 3, data)
     expect(id).toBe(77)
-    expect(mockDb).toHaveBeenCalledOnce()
+    expect(mockExecute).toHaveBeenCalledOnce()
   })
 
   it('create — вызывает INSERT с корректными полями', async () => {
-    mockDb.mockResolvedValueOnce([{ insertId: 1 }])
-
+    mockExecute.mockResolvedValueOnce([{ insertId: 1 }])
     await Task.create(1, 2, { title: 'Тест' })
-
-    const callArgs = mockDb.mock.calls[0]
+    const callArgs = mockExecute.mock.calls[0]
     expect(callArgs[0]).toContain('INSERT INTO tasks')
     expect(callArgs[1]).toContain('Тест')
   })
@@ -82,15 +77,14 @@ describe('Task Model', () => {
       { id: 1, title: 'Задача A', user_id: 5, deleted_at: null },
       { id: 2, title: 'Задача B', user_id: 5, deleted_at: null },
     ]
-    mockDb.mockResolvedValueOnce([rows])
-
+    mockExecute.mockResolvedValueOnce([rows])
     const result = await Task.findByUser(5)
     expect(result).toHaveLength(2)
     expect(result[0].title).toBe('Задача A')
   })
 
   it('findByUser — возвращает пустой массив если задач нет', async () => {
-    mockDb.mockResolvedValueOnce([[]])
+    mockExecute.mockResolvedValueOnce([[]])
     const result = await Task.findByUser(999)
     expect(result).toHaveLength(0)
   })
@@ -98,11 +92,9 @@ describe('Task Model', () => {
   // ── softDelete ────────────────────────────────────────────
 
   it('softDelete — вызывает UPDATE с deleted_at', async () => {
-    mockDb.mockResolvedValueOnce([{ affectedRows: 1 }])
-
+    mockExecute.mockResolvedValueOnce([{ affectedRows: 1 }])
     await Task.softDelete(1, 42)
-
-    const callArgs = mockDb.mock.calls[0]
+    const callArgs = mockExecute.mock.calls[0]
     expect(callArgs[0]).toContain('deleted_at')
     expect(callArgs[0]).toContain('UPDATE tasks')
     expect(callArgs[1]).toContain(1)
@@ -112,8 +104,7 @@ describe('Task Model', () => {
   // ── update ────────────────────────────────────────────────
 
   it('update — вызывает UPDATE с нужными полями', async () => {
-    mockDb.mockResolvedValueOnce([{ affectedRows: 1 }])
-
+    mockExecute.mockResolvedValueOnce([{ affectedRows: 1 }])
     const data = {
       title:       'Обновлённая задача',
       description: 'Новое описание',
@@ -128,10 +119,8 @@ describe('Task Model', () => {
       history:     [],
       completed:   false,
     }
-
     await Task.update(1, 42, 3, data)
-
-    const callArgs = mockDb.mock.calls[0]
+    const callArgs = mockExecute.mock.calls[0]
     expect(callArgs[0]).toContain('UPDATE tasks')
     expect(callArgs[0]).toContain('SET')
     expect(callArgs[1]).toContain('Обновлённая задача')
