@@ -119,7 +119,7 @@ exports.getAllUsers = async (req, res) => {
     const me = await Employee.findById(req.user?.id)
     if (me?.role !== 'администратор') return res.status(403).json({ message: 'Только администратор' })
     const users = await Employee.findAll()
-    res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, position: u.position || '', role: u.role || 'сотрудник', avatar: u.avatar || null })))
+    res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, position: u.position || '', role: u.role || null, avatar: u.avatar || null })))
   } catch (err) {
     res.status(500).json({ message: 'Ошибка сервера' })
   }
@@ -210,7 +210,7 @@ exports.updateProfile = async (req, res) => {
       name:     updated.name,
       email:    updated.email,
       position: updated.position,
-      role:     updated.role || 'сотрудник',
+      role:     updated.role || null,
       avatar:   updated.avatar || null,
     });
   } catch (error) {

@@ -2,12 +2,18 @@ const db = require("../config/db");
 
 class Employee {
   static async findByEmail(email) {
-    const [rows] = await db.execute("SELECT * FROM employees WHERE email = ?", [email]);
+    const [rows] = await db.execute(
+      "SELECT e.*, r.name AS role FROM employees e LEFT JOIN roles r ON e.id_role = r.id WHERE e.email = ?",
+      [email]
+    );
     return rows[0];
   }
 
   static async findById(id) {
-    const [rows] = await db.execute("SELECT * FROM employees WHERE id = ?", [id]);
+    const [rows] = await db.execute(
+      "SELECT e.*, r.name AS role FROM employees e LEFT JOIN roles r ON e.id_role = r.id WHERE e.id = ?",
+      [id]
+    );
     return rows[0];
   }
 
@@ -21,14 +27,14 @@ class Employee {
 
   static async updateProfile(id, { name, email, position, role }) {
     await db.execute(
-      "UPDATE employees SET name = ?, email = ?, position = ?, role = ? WHERE id = ?",
+      "UPDATE employees SET name = ?, email = ?, position = ?, id_role = (SELECT id FROM roles WHERE name = ?) WHERE id = ?",
       [name, email, position || '', role ?? null, id],
     );
   }
 
   static async findAll() {
     const [rows] = await db.execute(
-      'SELECT id, name, email, position, role, avatar FROM employees ORDER BY name ASC'
+      'SELECT e.id, e.name, e.email, e.position, e.avatar, r.name AS role FROM employees e LEFT JOIN roles r ON e.id_role = r.id ORDER BY e.name ASC'
     )
     return rows
   }
