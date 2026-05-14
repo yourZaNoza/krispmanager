@@ -144,7 +144,7 @@ const filteredColumns = computed(() => {
 
 const resetFilters = () => { filters.catIds = []; filters.cities = [] }
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 onMounted(async () => {
   try {

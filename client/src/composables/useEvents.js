@@ -7,7 +7,7 @@ let refCount = 0
 
 function openConnection() {
   if (es && es.readyState !== EventSource.CLOSED) return
-  es = new EventSource('http://localhost:3000/api/events/stream', { withCredentials: true })
+  es = new EventSource('/api/events/stream', { withCredentials: true })
   es.onmessage = (e) => {
     try {
       const event = JSON.parse(e.data)

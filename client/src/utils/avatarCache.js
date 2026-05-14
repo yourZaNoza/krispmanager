@@ -4,7 +4,7 @@ import axios from 'axios'
 const map = ref({})
 let fetchPromise = null
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 // Seed current user's avatar immediately from localStorage
 try {

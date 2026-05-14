@@ -27,7 +27,7 @@ watch(() => props.userId, () => { broken.value = false })
 const src = computed(() => {
   if (broken.value) return null
   const url = getAvatarUrl(props.userId)
-  return url ? `http://localhost:3000${url}` : null
+  return url || null
 })
 
 const COLORS = ['#7B5EA7','#1565C0','#E65100','#2E7D32','#6A1B9A','#00695C','#37474F','#BF360C']

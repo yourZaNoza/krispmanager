@@ -296,7 +296,7 @@ const register = async () => {
   if (valid) {
     try {
       // POST запрос
-      const response = await axios.post('http://localhost:3000/api/auth/register', {
+      const response = await axios.post('/api/auth/register', {
         name: registrationData.name,
         email: registrationData.email,
         password: registrationData.password,
@@ -323,7 +323,7 @@ const login = async () => {
   if (valid) {
     try {
       const response = await axios.post(
-        'http://localhost:3000/api/auth/login',
+        '/api/auth/login',
         {
           email: loginData.email,
           password: loginData.password,

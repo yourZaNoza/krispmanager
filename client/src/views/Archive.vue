@@ -571,7 +571,7 @@ const confirmRestoreNote = async () => {
 }
 
 // ── Data ───────────────────────────────────────────────────
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const selectedEmployee = computed(() =>
   employees.value.find(e => e.id === selectedId.value) ?? null

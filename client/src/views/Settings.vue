@@ -261,7 +261,7 @@ const isDark = computed(() => theme.global.current.value.dark)
 const toggleTheme = (val) => { theme.change(val ? 'dark' : 'light'); localStorage.setItem('theme', val ? 'dark' : 'light') }
 
 const sidebarOpen = ref(true)
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const isAdmin = computed(() => {
   try { return JSON.parse(localStorage.getItem('user') || '{}').role === 'администратор' } catch { return false }

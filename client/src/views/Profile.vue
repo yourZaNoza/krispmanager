@@ -182,7 +182,7 @@ import SearchBar   from '@/components/SearchBar.vue'
 import UserAvatar  from '@/components/UserAvatar.vue'
 import { setAvatarUrl } from '@/utils/avatarCache'
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const ROLES = ['сотрудник', 'менеджер', 'администратор']
 const ADMIN_EMAIL = 'test@gmail.com'

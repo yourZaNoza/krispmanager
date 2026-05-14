@@ -443,7 +443,7 @@ import SearchBar from '@/components/SearchBar.vue'
 
 const router      = useRouter()
 const sidebarOpen = ref(true)
-const api         = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api         = axios.create({ withCredentials: true })
 
 const theme  = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)

@@ -111,7 +111,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'unread-count'])
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const notifications = ref([])
 const unread        = ref(0)

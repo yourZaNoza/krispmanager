@@ -174,7 +174,7 @@ const filteredNotes = computed(() => {
 
 const resetFilters = () => { filters.tags = []; filters.dateFrom = ''; filters.dateTo = '' }
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 onMounted(async () => {
   try {

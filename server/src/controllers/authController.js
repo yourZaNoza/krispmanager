@@ -6,6 +6,15 @@ const fs       = require("fs");
 
 console.log("Проверка импорта Employee:", Employee);
 
+function buildCookieOptions(maxAge) {
+  return {
+    httpOnly: true,
+    secure: process.env.COOKIE_SECURE === "true",
+    sameSite: "lax",
+    maxAge,
+  };
+}
+
 exports.register = async (req, res) => {
   try {
     const { name, email, password } = req.body;
@@ -37,11 +46,7 @@ exports.register = async (req, res) => {
       { expiresIn: "24h" }
     );
 
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000,
-    });
+    res.cookie("token", token, buildCookieOptions(24 * 60 * 60 * 1000));
     res.status(201).json({
       message: "Регистрация успешна",
       user: { id: userId, name, email },
@@ -81,11 +86,7 @@ exports.login = async (req, res) => {
       ? 30 * 24 * 60 * 60 * 1000
       : 24 * 60 * 60 * 1000;
 
-    res.cookie("token", token, {
-      httpOnly: true, // Защита от кражи токена
-      secure: process.env.NODE_ENV === "production",
-      maxAge: cookieMaxAge,
-    });
+    res.cookie("token", token, buildCookieOptions(cookieMaxAge));
 
     res.status(200).json({
       message: "Успешный вход",

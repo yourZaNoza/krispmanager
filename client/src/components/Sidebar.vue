@@ -149,7 +149,7 @@ const idleColor   = '#727272'
 const notifOpen   = ref(false)
 const unreadCount = ref(0)
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 async function fetchUnreadCount() {
   try {

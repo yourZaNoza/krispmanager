@@ -1,7 +1,7 @@
 import { ref } from 'vue'
 import axios from 'axios'
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 // Fallback defaults shown before server data loads
 const FALLBACK = [

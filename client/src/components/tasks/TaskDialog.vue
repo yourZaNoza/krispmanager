@@ -422,7 +422,7 @@ import axios from 'axios'
 import MiniCalendar from '@/components/MiniCalendar.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 
-const tagApi = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const tagApi = axios.create({ withCredentials: true })
 const serverTaskTags = ref([])
 
 const props = defineProps({
@@ -432,7 +432,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'save'])
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 // Local dialog state
 const dateMenu         = ref(false)

@@ -112,7 +112,7 @@ import { ref, computed, nextTick } from 'vue'
 import axios from 'axios'
 import TaskCard from './TaskCard.vue'
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const props = defineProps({
   column:     { type: Object,   required: true },

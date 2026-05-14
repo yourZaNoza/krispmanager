@@ -110,7 +110,7 @@ const props = defineProps({
 })
 const emit = defineEmits(['update:modelValue', 'save'])
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const nameError      = ref(false)
 const representatives = ref([])

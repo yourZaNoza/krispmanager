@@ -127,7 +127,7 @@ const TOPICS = [
   'Другое',
 ]
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 const sidebarOpen = ref(true)
 const formRef     = ref(null)

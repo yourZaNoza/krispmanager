@@ -98,7 +98,8 @@ async function initDb() {
       comments      JSON,
       history       JSON,
       completed     TINYINT(1) DEFAULT 0,
-      created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      deleted_at    DATETIME DEFAULT NULL
     )
   `)
 
@@ -124,7 +125,9 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS notes (
       id          INT AUTO_INCREMENT PRIMARY KEY,
       user_id     INT DEFAULT NULL,
+      id_employee INT DEFAULT NULL,
       title       VARCHAR(500) DEFAULT '',
+      description TEXT DEFAULT NULL,
       date        DATE,
       time        VARCHAR(10)  DEFAULT NULL,
       tags        JSON,
@@ -132,7 +135,8 @@ async function initDb() {
       comments    JSON,
       history     JSON,
       attachments JSON,
-      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      deleted_at  DATETIME DEFAULT NULL
     )
   `)
 
@@ -140,6 +144,7 @@ async function initDb() {
     CREATE TABLE IF NOT EXISTS contacts (
       id          INT AUTO_INCREMENT PRIMARY KEY,
       user_id     INT DEFAULT NULL,
+      id_employee INT DEFAULT NULL,
       category_id INT DEFAULT NULL,
       name        VARCHAR(255) NOT NULL,
       city        VARCHAR(255) DEFAULT NULL,
@@ -226,7 +231,9 @@ async function initDb() {
   await modifyColumnSafe('notes', 'id_employee', 'INT DEFAULT NULL')
   await modifyColumnSafe('notes', 'description', 'TEXT DEFAULT NULL')
   await addColumnSafe('notes', 'user_id',     'INT DEFAULT NULL')
+  await addColumnSafe('notes', 'id_employee', 'INT DEFAULT NULL')
   await addColumnSafe('notes', 'title',       'VARCHAR(500) DEFAULT ""')
+  await addColumnSafe('notes', 'description', 'TEXT DEFAULT NULL')
   await addColumnSafe('notes', 'time',        'VARCHAR(10) DEFAULT NULL')
   await addColumnSafe('notes', 'tags',        'JSON')
   await addColumnSafe('notes', 'lists',       'JSON')
@@ -237,6 +244,7 @@ async function initDb() {
 
   await modifyColumnSafe('contacts', 'id_employee', 'INT DEFAULT NULL')
   await addColumnSafe('contacts', 'user_id',     'INT DEFAULT NULL')
+  await addColumnSafe('contacts', 'id_employee', 'INT DEFAULT NULL')
   await addColumnSafe('contacts', 'category_id', 'INT DEFAULT NULL')
   await addColumnSafe('contacts', 'city',        'VARCHAR(255) DEFAULT NULL')
   await addColumnSafe('contacts', 'email',       'VARCHAR(255) DEFAULT NULL')

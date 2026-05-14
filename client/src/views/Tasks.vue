@@ -239,7 +239,7 @@ const resetFilters = () => {
   filters.catIds = []; filters.tags = []; filters.dateFrom = ''; filters.dateTo = ''; filters.enterprises = []
 }
 
-const api = axios.create({ baseURL: 'http://localhost:3000', withCredentials: true })
+const api = axios.create({ withCredentials: true })
 
 // ── Helpers ────────────────────────────────────────────
 const toDate = (d) => {
