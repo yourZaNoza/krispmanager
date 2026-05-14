@@ -18,6 +18,15 @@ async function modifyColumnSafe(table, column, definition) {
   }
 }
 
+async function dropColumnSafe(table, column) {
+  try {
+    await db.execute(`ALTER TABLE \`${table}\` DROP COLUMN \`${column}\``)
+  } catch (err) {
+    if (err.code === 'ER_CANT_DROP_FIELD_OR_KEY' || err.code === 'ER_BAD_FIELD_ERROR') return
+    throw err
+  }
+}
+
 async function renameColumnSafe(table, oldName, newName, definition) {
   try {
     await db.execute(`ALTER TABLE \`${table}\` CHANGE \`${oldName}\` \`${newName}\` ${definition}`)
@@ -31,14 +40,33 @@ async function initDb() {
   // ── Создаём все таблицы если не существуют (для чистой БД / Docker) ──────
 
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS roles (
+      id   INT AUTO_INCREMENT PRIMARY KEY,
+      name VARCHAR(50) NOT NULL UNIQUE
+    )
+  `)
+
+  const [[{ rolesCnt }]] = await db.execute('SELECT COUNT(*) AS rolesCnt FROM roles')
+  if (Number(rolesCnt) === 0) {
+    await db.execute(`
+      INSERT INTO roles (id, name) VALUES
+        (1, 'администратор'),
+        (2, 'сотрудник'),
+        (3, 'менеджер'),
+        (4, 'нет роли')
+    `)
+  }
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS employees (
       id       INT AUTO_INCREMENT PRIMARY KEY,
       name     VARCHAR(255) NOT NULL,
       email    VARCHAR(255) NOT NULL UNIQUE,
       password VARCHAR(255) NOT NULL,
       position VARCHAR(255) DEFAULT '',
-      role     VARCHAR(50)  DEFAULT NULL,
-      avatar   VARCHAR(500) DEFAULT NULL
+      id_role  INT DEFAULT NULL,
+      avatar   VARCHAR(500) DEFAULT NULL,
+      FOREIGN KEY (id_role) REFERENCES roles(id)
     )
   `)
 
@@ -214,10 +242,32 @@ async function initDb() {
   await addColumnSafe('contacts', 'email',       'VARCHAR(255) DEFAULT NULL')
   await addColumnSafe('contacts', 'phone',       'VARCHAR(50)  DEFAULT NULL')
 
-  await addColumnSafe('employees', 'role',     "VARCHAR(50) DEFAULT NULL")
   await addColumnSafe('employees', 'avatar',   'VARCHAR(500) DEFAULT NULL')
   await addColumnSafe('employees', 'position', "VARCHAR(255) DEFAULT ''")
-  await modifyColumnSafe('employees', 'role',  'VARCHAR(50) DEFAULT NULL')
+  await addColumnSafe('employees', 'id_role',  'INT DEFAULT NULL')
+
+  // Мигрируем данные из старого role (varchar) в id_role, если старая колонка ещё существует
+  try {
+    await db.execute(`
+      UPDATE employees e
+      JOIN roles r ON e.role = r.name
+      SET e.id_role = r.id
+      WHERE e.id_role IS NULL AND e.role IS NOT NULL
+    `)
+  } catch (_) {}
+
+  // Удаляем старый varchar-столбец role
+  await dropColumnSafe('employees', 'role')
+
+  // Добавляем внешний ключ если ещё не существует
+  try {
+    await db.execute(`
+      ALTER TABLE employees
+      ADD CONSTRAINT fk_employees_role FOREIGN KEY (id_role) REFERENCES roles(id)
+    `)
+  } catch (err) {
+    if (err.code !== 'ER_DUP_KEY' && err.errno !== 1826 && err.errno !== 1215) throw err
+  }
 
   // ── Дефолтные глобальные категории задач ─────────────────────────────────
 
