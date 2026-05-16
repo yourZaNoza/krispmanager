@@ -29,20 +29,17 @@ services:
       retries: 10
 
   server:
+    network_mode: host
     build: ./server
     restart: unless-stopped
     env_file:
       - .env
     environment:
       NODE_ENV: production
-      DB_HOST: db
+      DB_HOST: 127.0.0.1
       COOKIE_SECURE: "true"
     volumes:
       - uploads_data:/app/uploads
-    ports:
-      - "3000:3000"
-    expose:
-      - "3000"
     depends_on:
       db:
         condition: service_healthy
@@ -54,6 +51,8 @@ services:
     restart: unless-stopped
     ports:
       - "5173:5173"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       server:
         condition: service_started
@@ -66,7 +65,9 @@ services:
     working_dir: /app
     command: ["sh"]
     environment:
-      VITE_API_PROXY_TARGET: http://server:3000
+      VITE_API_PROXY_TARGET: http://host.docker.internal:3000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     stdin_open: true
     tty: true
     depends_on:
@@ -81,12 +82,14 @@ services:
     working_dir: /app
     command: ["npm", "run", "dev"]
     environment:
-      VITE_API_PROXY_TARGET: http://server:3000
+      VITE_API_PROXY_TARGET: http://host.docker.internal:3000
     ports:
       - "5173:5173"
     volumes:
       - ./client:/app
       - client_node_modules:/app/node_modules
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     stdin_open: true
     tty: true
     depends_on:
