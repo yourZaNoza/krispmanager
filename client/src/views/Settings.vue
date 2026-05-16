@@ -255,6 +255,7 @@ import SearchBar from '@/components/SearchBar.vue'
 import CategoryDialog from '@/components/tasks/CategoryDialog.vue'
 import AdminSection from '@/components/admin/AdminSection.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { getStoredUser } from '@/utils/authStorage'
 
 const theme = useTheme()
 const isDark = computed(() => theme.global.current.value.dark)
@@ -263,9 +264,7 @@ const toggleTheme = (val) => { theme.change(val ? 'dark' : 'light'); localStorag
 const sidebarOpen = ref(true)
 const api = axios.create({ withCredentials: true })
 
-const isAdmin = computed(() => {
-  try { return JSON.parse(localStorage.getItem('user') || '{}').role === 'администратор' } catch { return false }
-})
+const isAdmin = computed(() => getStoredUser().role === 'администратор')
 
 const ROLE_OPTIONS = [
   { title: 'нет роли',       value: null            },

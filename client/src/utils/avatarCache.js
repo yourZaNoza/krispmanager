@@ -1,5 +1,6 @@
 import { ref } from 'vue'
 import axios from 'axios'
+import { getStoredUser } from './authStorage'
 
 const map = ref({})
 let fetchPromise = null
@@ -7,13 +8,10 @@ let fetchPromise = null
 const api = axios.create({ withCredentials: true })
 
 // Seed current user's avatar immediately from localStorage
-try {
-  const stored = localStorage.getItem('user')
-  if (stored) {
-    const u = JSON.parse(stored)
-    if (u?.id && u?.avatar) map.value[u.id] = u.avatar
-  }
-} catch { /* ignore */ }
+const user = getStoredUser()
+if (user.id && user.avatar) {
+  map.value[user.id] = user.avatar
+}
 
 export function loadAvatars() {
   if (!fetchPromise) {

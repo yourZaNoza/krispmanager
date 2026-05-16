@@ -421,6 +421,7 @@ import { ref, watch, computed, onMounted } from 'vue'
 import axios from 'axios'
 import MiniCalendar from '@/components/MiniCalendar.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
+import { getStoredUser } from '@/utils/authStorage'
 
 const tagApi = axios.create({ withCredentials: true })
 const serverTaskTags = ref([])
@@ -591,9 +592,7 @@ const selectEnterprise = (ent) => {
 }
 
 // Comments
-const currentUserName = (() => {
-  try { return JSON.parse(localStorage.getItem('user') || '{}').name || 'Вы' } catch { return 'Вы' }
-})()
+const currentUserName = getStoredUser().name || 'Вы'
 
 const submitComment = () => {
   if (!newComment.value.trim()) return

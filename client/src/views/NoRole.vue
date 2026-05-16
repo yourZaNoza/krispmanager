@@ -35,17 +35,14 @@
 import { ref, onMounted } from 'vue'
 import Sidebar   from '@/components/Sidebar.vue'
 import SearchBar from '@/components/SearchBar.vue'
+import { getStoredUser } from '@/utils/authStorage'
 
 const sidebarOpen = ref(true)
 const userName    = ref('')
 
 onMounted(() => {
-  try {
-    const user = JSON.parse(localStorage.getItem('user') || '{}')
-    userName.value = user.name || ''
-  } catch {
-    userName.value = ''
-  }
+  const user = getStoredUser()
+  userName.value = user.name || ''
 })
 </script>
 

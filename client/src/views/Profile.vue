@@ -181,6 +181,7 @@ import Sidebar     from '@/components/Sidebar.vue'
 import SearchBar   from '@/components/SearchBar.vue'
 import UserAvatar  from '@/components/UserAvatar.vue'
 import { setAvatarUrl } from '@/utils/avatarCache'
+import { getStoredUser, setStoredUser } from '@/utils/authStorage'
 
 const api = axios.create({ withCredentials: true })
 
@@ -225,9 +226,8 @@ async function onAvatarPick(e) {
     fd.append('avatar', file)
     const { data } = await api.post('/api/auth/avatar', fd)
     setAvatarUrl(userId.value, data.avatar)
-    const stored = localStorage.getItem('user')
-    const u = stored ? JSON.parse(stored) : {}
-    localStorage.setItem('user', JSON.stringify({ ...u, avatar: data.avatar }))
+    const user = getStoredUser()
+    setStoredUser({ ...user, avatar: data.avatar })
   } catch (err) {
     saveError.value = err.response?.data?.message || 'Ошибка загрузки аватара'
     showError.value = true
@@ -237,21 +237,16 @@ async function onAvatarPick(e) {
 }
 
 onMounted(async () => {
-  try {
-    const stored = localStorage.getItem('user')
-    if (stored) {
-      const user = JSON.parse(stored)
-      userId.value = user.id || null
-      currentUserEmail.value = user.email || ''
-      form.value = {
-        name:     user.name     || '',
-        email:    user.email    || '',
-        position: user.position || '',
-        role:     user.role     || null,
-      }
-      original.value = { ...form.value }
-    }
-  } catch {}
+  const user = getStoredUser()
+  userId.value = user.id || null
+  currentUserEmail.value = user.email || ''
+  form.value = {
+    name: user.name || '',
+    email: user.email || '',
+    position: user.position || '',
+    role: user.role || null,
+  }
+  original.value = { ...form.value }
 
   loadingTasks.value = true
   try {
@@ -277,10 +272,9 @@ const save = async () => {
       role: form.value.role,
     })
 
-    const stored = localStorage.getItem('user')
-    const user = stored ? JSON.parse(stored) : {}
+    const user = getStoredUser()
     const updated = { ...user, name: data.name, email: data.email, position: data.position, role: data.role }
-    localStorage.setItem('user', JSON.stringify(updated))
+    setStoredUser(updated)
     original.value = { ...form.value }
     saved.value = true
   } catch (err) {

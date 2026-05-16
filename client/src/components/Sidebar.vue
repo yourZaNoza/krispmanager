@@ -120,6 +120,7 @@ import NotificationsPanel from '@/components/NotificationsPanel.vue'
 import UserAvatar from '@/components/UserAvatar.vue'
 import { useEvents } from '@/composables/useEvents'
 import { loadAvatars } from '@/utils/avatarCache'
+import { clearStoredUser, getStoredUser } from '@/utils/authStorage'
 
 import BellRaw from '@/assets/Bell.svg?raw'
 import ClipboardRaw from '@/assets/ClipboardText.svg?raw'
@@ -159,7 +160,7 @@ async function fetchUnreadCount() {
 }
 
 const logout = () => {
-  localStorage.removeItem('user')
+  clearStoredUser()
   router.push('/')
 }
 
@@ -174,17 +175,10 @@ const hasArchiveAccess = computed(() =>
 )
 
 onMounted(() => {
-  try {
-    const stored = localStorage.getItem('user')
-    if (stored) {
-      const user = JSON.parse(stored)
-      userName.value      = user.name || ''
-      userRole.value      = user.role || null
-      sidebarUserId.value = user.id   || null
-    }
-  } catch {
-    userName.value = ''
-  }
+  const user = getStoredUser()
+  userName.value = user.name || ''
+  userRole.value = user.role || null
+  sidebarUserId.value = user.id || null
 
   fetchUnreadCount()
   loadAvatars()

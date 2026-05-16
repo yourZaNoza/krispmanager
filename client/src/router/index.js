@@ -13,6 +13,7 @@ import Settings from '../views/Settings.vue'
 import Archive from '../views/Archive.vue'
 import Help from '../views/Help.vue'
 import NoRole from '../views/NoRole.vue'
+import { getStoredUser } from '../utils/authStorage'
 
 const routes = [
   {
@@ -101,14 +102,6 @@ const ALLOWED_WITHOUT_ROLE = new Set([
   '/user-agreement',
   '/personal-data-policy',
 ])
-
-function getStoredUser() {
-  try {
-    return JSON.parse(localStorage.getItem('user') || '{}')
-  } catch {
-    return {}
-  }
-}
 
 router.beforeEach((to, _from, next) => {
   const user = getStoredUser()

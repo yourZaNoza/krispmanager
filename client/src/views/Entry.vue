@@ -218,6 +218,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import axios from 'axios' // Импортируем axios для HTTP-запросов
+import { setStoredUser } from '@/utils/authStorage'
 
 const router = useRouter()
 
@@ -334,10 +335,13 @@ const login = async () => {
         },
       )
 
-      localStorage.setItem('user', JSON.stringify(response.data.user))
+      const user = setStoredUser(response.data?.user)
+      if (!user.id) {
+        throw new Error('В ответе сервера отсутствуют данные пользователя')
+      }
 
       closeLogin()
-      router.push(response.data.user.role ? '/tasks' : '/no-role')
+      router.push(user.role ? '/tasks' : '/no-role')
     } catch (error) {
       console.error(error)
       alert(error.response?.data?.message || 'Произошла ошибка при входе')
